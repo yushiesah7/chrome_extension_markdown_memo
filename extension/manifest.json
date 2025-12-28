@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Local Markdown Memo",
+  "version": "0.1.0",
+  "description": "ローカルPC上でMarkdownメモを管理できるシンプルなChrome拡張です。",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html"
+}
