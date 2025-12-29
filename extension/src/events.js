@@ -22,6 +22,9 @@ const AUTO_SAVE_DELAY = 400;
 let autoSaveTimeout = null;
 let statusResetTimeout = null;
 
+let isComposing = false;
+let lastEnterWithShift = false;
+
 export function attachEventListeners() {
   const {
     createBtn,
@@ -37,6 +40,10 @@ export function attachEventListeners() {
   deleteBtn.addEventListener("click", () => handleDeleteNote());
   noteTitleEl.addEventListener("input", handleEditorChange);
   noteBodyEl.addEventListener("input", handleEditorChange);
+  noteBodyEl.addEventListener("compositionstart", handleCompositionStart);
+  noteBodyEl.addEventListener("compositionend", handleCompositionEnd);
+  noteBodyEl.addEventListener("keydown", handleEditorKeydown);
+  noteBodyEl.addEventListener("beforeinput", handleEditorBeforeInput);
 
   noteListEl.addEventListener("click", handleNoteListClick);
   noteListEl.addEventListener("dragstart", handleDragStart);
@@ -146,18 +153,6 @@ function handleSortToggle() {
   const current = getSortDirection();
   const next = current === "asc" ? "desc" : "asc";
   setSortDirection(next);
-
-  // sortOrder を updatedAt 基準で再生成
-  const notes = getNotes();
-  const sortedIds = [...notes]
-    .sort((a, b) => {
-      const aTime = a.updatedAt || 0;
-      const bTime = b.updatedAt || 0;
-      return next === "asc" ? aTime - bTime : bTime - aTime;
-    })
-    .map((n) => n.id);
-  setSortOrder(sortedIds);
-
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
@@ -193,6 +188,71 @@ function handlePreviewOpen() {
       setStatus("idle", "プレビューを開けませんでした");
     }
   })();
+}
+
+function handleCompositionStart() {
+  isComposing = true;
+}
+
+function handleCompositionEnd() {
+  isComposing = false;
+}
+
+function handleEditorKeydown(event) {
+  // beforeinput 側で insertLineBreak を扱うため、ここでは Shift+Enter 判定だけ保持
+  if (event.key !== "Enter") return;
+  lastEnterWithShift = Boolean(event.shiftKey);
+}
+
+function handleEditorBeforeInput(event) {
+  if (isComposing) return;
+  if (event.inputType !== "insertLineBreak") return;
+
+  const target = event.target;
+  if (!(target instanceof HTMLTextAreaElement)) return;
+
+  // Shift+Enter は通常改行
+  if (lastEnterWithShift) {
+    lastEnterWithShift = false;
+    return;
+  }
+  lastEnterWithShift = false;
+
+  const value = target.value;
+  const start = target.selectionStart;
+  const end = target.selectionEnd;
+  if (start !== end) return;
+
+  // 行末以外では通常の改行
+  const nextNewline = value.indexOf("\n", start);
+  if (nextNewline !== -1 && nextNewline !== start) return;
+
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+
+  const lineStart = before.lastIndexOf("\n") + 1;
+  const currentLine = before.slice(lineStart);
+
+  const matchUnordered = currentLine.match(/^(\s*)([-*+])\s+/);
+  const matchOrdered = currentLine.match(/^(\s*)(\d+)\.\s+/);
+  if (!matchUnordered && !matchOrdered) return;
+
+  event.preventDefault();
+
+  const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
+  const prefix = matchUnordered
+    ? `${indent}${matchUnordered[2]} `
+    : `${indent}${Number(matchOrdered[2]) + 1}. `;
+
+  const isLineOnlyPrefix = matchUnordered
+    ? currentLine.trim() === `${matchUnordered[2]}`
+    : currentLine.trim() === `${matchOrdered[2]}.`;
+
+  const insert = isLineOnlyPrefix ? "\n" : `\n${prefix}`;
+  const newPos = before.length + insert.length;
+  target.value = before + insert + after;
+  target.setSelectionRange(newPos, newPos);
+  target.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function scheduleAutoSave() {

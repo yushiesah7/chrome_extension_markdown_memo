@@ -251,6 +251,58 @@ graph TD
         textarea?.addEventListener("input", () => {
           if (!previewPanel.hidden) renderPreview();
         });
+        let isComposing = false;
+        let lastEnterWithShift = false;
+
+        textarea?.addEventListener("compositionstart", () => {
+          isComposing = true;
+        });
+        textarea?.addEventListener("compositionend", () => {
+          isComposing = false;
+        });
+        textarea?.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          lastEnterWithShift = Boolean(e.shiftKey);
+        });
+        textarea?.addEventListener("beforeinput", (e) => {
+          if (isComposing) return;
+          if (e.inputType !== "insertLineBreak") return;
+          if (lastEnterWithShift) {
+            lastEnterWithShift = false;
+            return;
+          }
+          lastEnterWithShift = false;
+
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          if (start !== end) return;
+          const nextNewline = value.indexOf("\\n", start);
+          if (nextNewline !== -1 && nextNewline !== start) return;
+
+          const before = value.slice(0, start);
+          const after = value.slice(end);
+          const lineStart = before.lastIndexOf("\\n") + 1;
+          const currentLine = before.slice(lineStart);
+
+          const matchUnordered = currentLine.match(/^(\\s*)([-*+])\\s+/);
+          const matchOrdered = currentLine.match(/^(\\s*)(\\d+)\\.\\s+/);
+          if (!matchUnordered && !matchOrdered) return;
+
+          e.preventDefault();
+          const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
+          const prefix = matchUnordered
+            ? `${indent}${matchUnordered[2]} `
+            : `${indent}${Number(matchOrdered[2]) + 1}. `;
+          const isLineOnlyPrefix = matchUnordered
+            ? currentLine.trim() === `${matchUnordered[2]}`
+            : currentLine.trim() === `${matchOrdered[2]}.`;
+          const insert = isLineOnlyPrefix ? "\\n" : `\\n${prefix}`;
+          const newPos = before.length + insert.length;
+          textarea.value = before + insert + after;
+          textarea.setSelectionRange(newPos, newPos);
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        });
 
         copyAllBtn?.addEventListener("click", async () => {
           try {
