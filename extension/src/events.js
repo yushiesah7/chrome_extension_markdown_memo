@@ -183,6 +183,16 @@ function handlePreviewOpen() {
         await chrome.storage.local.set({ previewPayload: payload });
       }
       await chrome.tabs.create({ url });
+
+      try {
+        if (chrome.storage?.session) {
+          await chrome.storage.session.remove(["previewPayload"]);
+        } else {
+          await chrome.storage.local.remove(["previewPayload"]);
+        }
+      } catch (e) {
+        // ignore
+      }
     } catch (error) {
       console.error("プレビュータブのオープンに失敗しました", error);
       setStatus("idle", "プレビューを開けませんでした");

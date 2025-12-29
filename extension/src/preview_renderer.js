@@ -51,7 +51,12 @@ export function renderPreview({ text, target }) {
 
   if (hasMermaid && typeof mermaid !== "undefined") {
     try {
-      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "dark",
+        securityLevel: "strict",
+        flowchart: { htmlLabels: false },
+      });
       mermaid.run({ querySelector: ".preview-markdown .mermaid" });
     } catch (e) {
       console.error("Mermaid render error", e);
