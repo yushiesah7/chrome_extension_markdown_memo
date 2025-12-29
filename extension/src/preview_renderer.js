@@ -1,56 +1,69 @@
+import { renderMarkdown } from "./markdown.js";
+
 export function renderPreview({ text, target }) {
   if (!target) return;
   // プレビュー領域を初期化（毎回描画し直す）
   target.innerHTML = "";
+
   const container = document.createElement("div");
-  container.className = "preview-markdown";
+  container.className = "preview preview-markdown";
 
-  // ``` で区切ってコードブロックを簡易的に抽出
-  const parts = (text || "").split(/```/);
+  // ```mermaid ... ``` は Markdown 本体と分離し、レンダリング後に図へ差し替える
+  const mermaidBlocks = [];
+  const placeholderPrefix = "@@MERMAID_BLOCK_";
+  const placeholderSuffix = "@@";
+
+  const processed = (text || "").replace(
+    /```mermaid\s*\n([\s\S]*?)\n```/g,
+    (_, code) => {
+      const idx = mermaidBlocks.length;
+      mermaidBlocks.push(String(code || "").trim());
+      return `\n${placeholderPrefix}${idx}${placeholderSuffix}\n`;
+    }
+  );
+
+  // Markdown を HTML に変換して表示
+  container.innerHTML = renderMarkdown(processed);
+
+  // Mermaidプレースホルダーを図ブロックへ差し替え
   let hasMermaid = false;
-  for (let i = 0; i < parts.length; i++) {
-    if (i % 2 === 1) {
-      const block = parts[i];
-      const firstLine = block.split("\n")[0].trim();
-      if (firstLine === "mermaid") {
-        // ```mermaid ... ``` を Mermaid 描画対象として扱う
-        const code = block.split("\n").slice(1).join("\n");
-        const wrapper = document.createElement("div");
-        wrapper.className = "mermaid-block";
+  for (let i = 0; i < mermaidBlocks.length; i++) {
+    const token = `${placeholderPrefix}${i}${placeholderSuffix}`;
+    const candidates = Array.from(container.querySelectorAll("p"));
+    const targetEl = candidates.find((p) => p.textContent?.trim() === token);
+    if (!targetEl) continue;
 
-        // ブロック単位コピー（元の mermaid コードとしてコピーする）
-        const copyBtn = buildCopyButton("```mermaid\n" + code + "\n```\n");
-        const el = document.createElement("div");
-        el.className = "mermaid";
-        el.textContent = code;
+    const wrapper = document.createElement("div");
+    wrapper.className = "mermaid-block";
 
-        wrapper.appendChild(copyBtn);
-        wrapper.appendChild(el);
-        container.appendChild(wrapper);
-        hasMermaid = true;
-        continue;
-      }
-    }
+    const code = mermaidBlocks[i];
+    // ブロック単位コピー（元の mermaid コードとしてコピーする）
+    const copyBtn = buildCopyButton("```mermaid\n" + code + "\n```\n");
+    const el = document.createElement("div");
+    el.className = "mermaid";
+    el.textContent = code;
+    wrapper.appendChild(copyBtn);
+    wrapper.appendChild(el);
 
-    // Markdown本文（通常テキスト部分）はコードブロックとして表示
-    const trimmed = parts[i].trim();
-    if (trimmed) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "code-block";
-      // ブロック単位コピー（このブロックの文字列をそのままコピー）
-      const copyBtn = buildCopyButton(parts[i]);
-      const pre = document.createElement("pre");
-      pre.textContent = parts[i];
-      wrapper.appendChild(copyBtn);
-      wrapper.appendChild(pre);
-      container.appendChild(wrapper);
-    }
+    targetEl.replaceWith(wrapper);
+    hasMermaid = true;
   }
 
-  if (!container.childElementCount) {
-    const pre = document.createElement("pre");
-    pre.textContent = text || "(プレビュー対象がありません)";
-    container.appendChild(pre);
+  // 通常のコードブロック（<pre>）にもコピーを付ける
+  const preEls = Array.from(container.querySelectorAll("pre"));
+  for (const pre of preEls) {
+    if (pre.closest(".mermaid-block")) continue;
+    if (pre.parentElement?.classList.contains("code-block")) continue;
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+    const copyBtn = buildCopyButton(pre.textContent || "");
+    pre.replaceWith(wrapper);
+    wrapper.appendChild(copyBtn);
+    wrapper.appendChild(pre);
+  }
+
+  if (!container.textContent?.trim()) {
+    container.innerHTML = "<p>(プレビュー対象がありません)</p>";
   }
 
   target.appendChild(container);

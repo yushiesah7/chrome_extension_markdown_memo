@@ -9,6 +9,42 @@
   word-break: break-word;
 }
 
+/* タブ画面で縦いっぱい使うためのレイアウト調整 */
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 18px 18px 14px;
+  gap: 14px;
+}
+
+.editor__body {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+}
+
+.editor__panel {
+  flex: 1;
+  display: flex;
+}
+
+.editor__panel--edit {
+  min-height: 0;
+}
+
+.editor__textarea {
+  height: 100%;
+  min-height: 0;
+}
+
+.preview-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .code-block {
   position: relative;
   border: 1px solid rgba(148, 163, 184, 0.2);
