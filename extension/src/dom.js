@@ -12,6 +12,7 @@ export const elements = {
   sidebarEl: document.querySelector(".sidebar"),
   sortToggleEl: document.getElementById("sortToggle"),
   previewButtonEl: document.getElementById("previewButton"),
+  openDocsEl: document.getElementById("openDocs"),
   copyAllEl: document.getElementById("copyAll"),
   modeEditEl: document.getElementById("modeEdit"),
   modePreviewEl: document.getElementById("modePreview"),

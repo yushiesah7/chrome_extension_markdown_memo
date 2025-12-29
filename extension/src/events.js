@@ -34,10 +34,14 @@ export function attachEventListeners() {
     noteListEl,
     sortToggleEl,
     previewButtonEl,
+    openDocsEl,
   } = elements;
 
+  // 新規メモを作成
   createBtn.addEventListener("click", handleCreateNote);
+  // 現在のメモを削除
   deleteBtn.addEventListener("click", () => handleDeleteNote());
+  // タイトル/本文の編集
   noteTitleEl.addEventListener("input", handleEditorChange);
   noteBodyEl.addEventListener("input", handleEditorChange);
   noteBodyEl.addEventListener("compositionstart", handleCompositionStart);
@@ -45,14 +49,20 @@ export function attachEventListeners() {
   noteBodyEl.addEventListener("keydown", handleEditorKeydown);
   noteBodyEl.addEventListener("beforeinput", handleEditorBeforeInput);
 
+  // メモ一覧のクリック（選択/削除）
   noteListEl.addEventListener("click", handleNoteListClick);
   noteListEl.addEventListener("dragstart", handleDragStart);
   noteListEl.addEventListener("dragend", handleDragEnd);
   noteListEl.addEventListener("dragover", handleDragOver);
 
+  // 並び替え（昇順/降順）
   sortToggleEl.addEventListener("click", handleSortToggle);
 
+  // 仕様書を開く
+  openDocsEl?.addEventListener("click", handleOpenDocs);
+
   if (!document.body.dataset.previewTab && previewButtonEl) {
+    // タブ（編集/プレビュー）を開く
     previewButtonEl.addEventListener("click", handlePreviewOpen);
   }
 }
@@ -163,41 +173,29 @@ function handleSortToggle() {
 }
 
 function handlePreviewOpen() {
-  const note = getActiveNote();
-  if (!note) {
-    setStatus("idle", "プレビューできるメモがありません");
-    return;
-  }
-  const text = note?.body || "";
-  const title = note?.title || "";
-
-  // プレビュー用データを一時保存して新規タブで開く
-  const payload = { text, title };
+  // タブ側は拡張の保存領域から直接ロードするため、payload受け渡しは不要。
   const url = chrome.runtime.getURL("src/preview.html");
+  openInNewTab(url, "プレビューを開けませんでした");
+}
 
-  (async () => {
-    try {
-      if (chrome.storage?.session) {
-        await chrome.storage.session.set({ previewPayload: payload });
-      } else {
-        await chrome.storage.local.set({ previewPayload: payload });
-      }
-      await chrome.tabs.create({ url });
+function handleOpenDocs() {
+  const url = chrome.runtime.getURL("src/docs.html");
+  openInNewTab(url, "仕様書を開けませんでした");
+}
 
-      try {
-        if (chrome.storage?.session) {
-          await chrome.storage.session.remove(["previewPayload"]);
-        } else {
-          await chrome.storage.local.remove(["previewPayload"]);
-        }
-      } catch (e) {
-        // ignore
-      }
-    } catch (error) {
-      console.error("プレビュータブのオープンに失敗しました", error);
-      setStatus("idle", "プレビューを開けませんでした");
-    }
-  })();
+function openInNewTab(url, fallbackMessage) {
+  try {
+    const opened = window.open(url, "_blank");
+    if (opened) return;
+  } catch (e) {
+    // ignore
+  }
+  try {
+    chrome.tabs?.create?.({ url });
+  } catch (error) {
+    console.error("タブのオープンに失敗しました", error);
+    setStatus("idle", fallbackMessage);
+  }
 }
 
 function handleCompositionStart() {

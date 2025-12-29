@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>仕様書 | Mermaid Markdown Memo</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="docs.css" />
+  </head>
+  <body>
+    <div class="docs">
+      <header class="docs__header">
+        <div class="docs__title">
+          <h1>仕様書</h1>
+          <p>Mermaid Markdown Memo の使い方（やさしい版） - 2025/12/29 時点</p>
+        </div>
+        <div class="docs__actions">
+          <button class="button--ghost" id="close">閉じる</button>
+        </div>
+      </header>
+
+      <main class="docs__content" id="content">
+        <section>
+          <h2>このアプリでできること</h2>
+          <p>
+            これは「Markdown（マークダウン）」でメモを書き、必要に応じて
+            Mermaid（図を描くための記法）をプレビューできるメモアプリです。
+          </p>
+          <ul>
+            <li>メモを作る / 消す / 切り替える</li>
+            <li>Markdownで見出しや箇条書きが書ける</li>
+            <li>Mermaidでフローチャートなどの図が作れる</li>
+            <li>タブで「編集」と「プレビュー」を切り替えられる</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>基本の使い方</h2>
+          <h3>1. 新しいメモを作る</h3>
+          <p>左上の「＋」ボタンで新しいメモが作れます。</p>
+
+          <h3>2. メモを切り替える</h3>
+          <p>左の一覧からメモをクリックすると、そのメモが開きます。</p>
+
+          <h3>3. 編集 / プレビュー</h3>
+          <p>
+            タブで開いた画面では「編集」「プレビュー」を切り替えられます。
+            編集は文字を書く画面、プレビューは見た目を確認する画面です。
+          </p>
+        </section>
+
+        <section>
+          <h2>Markdownの例</h2>
+          <p>例えば、箇条書きは次のように書けます。</p>
+          <pre><code>- りんご
+- みかん
+- ぶどう</code></pre>
+          <p>
+            さらに、箇条書きの行末でEnterを押すと、次の行に自動で「- 」が入るようにしています。
+          </p>
+        </section>
+
+        <section>
+          <h2>Mermaidの例（図を描く）</h2>
+          <p>次のように書くと、プレビューで図になります。</p>
+          <pre><code>```mermaid
+flowchart TD
+  A[メモを書く] --> B[プレビューを見る]
+  B --> C{図が必要？}
+  C -->|はい| D[Mermaidを書く]
+  C -->|いいえ| E[そのまま保存]
+```</code></pre>
+
+          <div class="mermaid">
+flowchart TD
+  A[メモを書く] --> B[プレビューを見る]
+  B --> C{図が必要？}
+  C -->|はい| D[Mermaidを書く]
+  C -->|いいえ| E[そのまま保存]
+          </div>
+        </section>
+
+        <section>
+          <h2>よくある質問</h2>
+          <h3>Q. データはどこに保存されますか？</h3>
+          <p>この拡張の中（Chromeのローカル保存領域）に保存されます。</p>
+
+          <h3>Q. ネットに送信されますか？</h3>
+          <p>このアプリは外部サーバーに送信する仕組みを持ちません。</p>
+        </section>
+      </main>
+    </div>
+
+    <script src="lib/mermaid.min.js"></script>
+    <script type="module" src="docs.js"></script>
+  </body>
+</html>
