@@ -291,8 +291,8 @@ body {
   position: fixed;
   inset: 0;
   margin: auto;
-  width: min(960px, 90vw);
-  height: min(680px, 82vh);
+  width: min(1100px, 95vw);
+  height: min(820px, 90vh);
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 18px;
@@ -308,6 +308,7 @@ body {
   justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  gap: 12px;
 }
 
 .preview-modal__title {
@@ -315,6 +316,12 @@ body {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.01em;
+}
+
+.preview-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .preview-modal__body {
@@ -337,6 +344,21 @@ body {
   word-break: break-word;
 }
 
+.code-block {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 12px 12px 8px;
+}
+
+.code-block pre {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
 .preview-markdown .mermaid {
   background: rgba(15, 23, 42, 0.76);
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -350,12 +372,19 @@ body {
   border-radius: 12px;
   padding: 10px 10px 6px;
   background: rgba(15, 23, 42, 0.78);
+  max-height: 520px;
+  overflow: auto;
 }
 
 .mermaid-block .mermaid {
   padding: 8px;
   border: none;
   background: transparent;
+}
+
+.mermaid-block .mermaid svg {
+  max-width: 100%;
+  height: auto;
 }
 
 .copy-button {
