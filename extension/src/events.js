@@ -4,6 +4,9 @@ import {
   getDraggedNoteId,
   getNotes,
   getSortOrder,
+  getSortDirection,
+  setSortDirection,
+  setSortOrder,
   createNote,
   deleteNote,
   updateActiveNote,
@@ -20,7 +23,7 @@ let autoSaveTimeout = null;
 let statusResetTimeout = null;
 
 export function attachEventListeners() {
-  const { createBtn, deleteBtn, noteTitleEl, noteBodyEl, noteListEl } = elements;
+  const { createBtn, deleteBtn, noteTitleEl, noteBodyEl, noteListEl, sortToggleEl } = elements;
 
   createBtn.addEventListener("click", handleCreateNote);
   deleteBtn.addEventListener("click", () => handleDeleteNote());
@@ -31,12 +34,15 @@ export function attachEventListeners() {
   noteListEl.addEventListener("dragstart", handleDragStart);
   noteListEl.addEventListener("dragend", handleDragEnd);
   noteListEl.addEventListener("dragover", handleDragOver);
+
+  sortToggleEl.addEventListener("click", handleSortToggle);
 }
 
 export function renderApp() {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
   updateEditor(getActiveNote());
@@ -67,6 +73,7 @@ function handleEditorChange() {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
   updateActiveNoteMeta(note);
@@ -117,6 +124,32 @@ function handleDragOver(event) {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
+    activeNoteId: getActiveNoteId(),
+  });
+  scheduleAutoSave();
+}
+
+function handleSortToggle() {
+  const current = getSortDirection();
+  const next = current === "asc" ? "desc" : "asc";
+  setSortDirection(next);
+
+  // sortOrder を updatedAt 基準で再生成
+  const notes = getNotes();
+  const sortedIds = [...notes]
+    .sort((a, b) => {
+      const aTime = a.updatedAt || 0;
+      const bTime = b.updatedAt || 0;
+      return next === "asc" ? aTime - bTime : bTime - aTime;
+    })
+    .map((n) => n.id);
+  setSortOrder(sortedIds);
+
+  renderNoteList({
+    notes: getNotes(),
+    sortOrder: getSortOrder(),
+    sortDirection: next,
     activeNoteId: getActiveNoteId(),
   });
   scheduleAutoSave();

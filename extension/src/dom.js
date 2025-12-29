@@ -10,6 +10,7 @@ export const elements = {
   statusIndicatorEl: document.querySelector(".status-indicator"),
   statusTextEl: document.querySelector(".editor__status-text"),
   sidebarEl: document.querySelector(".sidebar"),
+  sortToggleEl: document.getElementById("sortToggle"),
 };
 
 export function ensureElementsExist() {

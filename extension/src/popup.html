@@ -16,6 +16,30 @@
           <div class="sidebar__header-actions">
             <span id="noteCount" class="badge" aria-live="polite">0</span>
             <button
+              id="sortToggle"
+              class="icon-button"
+              title="更新日時で並べ替え"
+              aria-label="更新日時で並べ替え"
+              type="button"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="7 7 12 2 17 7"></polyline>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+                <polyline points="17 17 12 22 7 17"></polyline>
+              </svg>
+              <span class="visually-hidden">更新日時ソート</span>
+            </button>
+            <button
               id="createNote"
               class="icon-button icon-button--primary"
               title="新規メモを作成"
