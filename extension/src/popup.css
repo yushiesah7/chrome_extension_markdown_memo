@@ -378,6 +378,19 @@ body {
   margin-top: 0;
 }
 
+.preview .task-list-item {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview .task-list-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: rgba(37, 99, 235, 0.9);
+}
+
 .preview pre {
   background: #0f172a;
   color: #f8fafc;
