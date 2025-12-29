@@ -76,9 +76,12 @@
           </div>
 
           <div class="editor__actions">
+            <button class="button--ghost" id="previewButton" type="button" aria-label="Markdownプレビュー（Mermaid対応）">
+              プレビュー
+            </button>
             <button class="icon-button" title="メモを削除" aria-label="メモを削除" type="button">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6" />
+                <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6" />
                 <path d="M14 11v6" />
@@ -88,14 +91,18 @@
           </div>
         </div>
 
-        <textarea class="editor__textarea" aria-label="メモ本文">水２００
-ソーダ３００
-ミックス４００
-ミルク６００
-１３９００
-13900
-11200
-18600gh</textarea>
+        <textarea class="editor__textarea" aria-label="メモ本文">メモ本文サンプル
+
+```mermaid
+graph TD
+  A[Start] --> B[Next]
+  B --> C{Decision}
+  C -->|Yes| D[Done]
+  C -->|No| A
+```
+
+箇条書きなどもこの下に続けて書けます。
+</textarea>
 
         <div class="editor__status" aria-live="polite">
           <span class="status-indicator" aria-hidden="true"></span>
@@ -103,6 +110,21 @@
         </div>
       </main>
     </div>
+    <div class="preview-backdrop" id="previewBackdrop" hidden></div>
+    <div class="preview-modal" id="previewModal" hidden>
+      <div class="preview-modal__header">
+        <h2 class="preview-modal__title">プレビュー</h2>
+        <button class="icon-button" id="previewClose" aria-label="閉じる" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="preview-modal__body" id="previewBody"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script>
       (() => {
         const sortBtn = document.getElementById("mockSortToggle");
@@ -126,6 +148,76 @@
         });
 
         apply();
+
+        // Mermaid preview
+        const previewBtn = document.getElementById("previewButton");
+        const modal = document.getElementById("previewModal");
+        const backdrop = document.getElementById("previewBackdrop");
+        const previewBody = document.getElementById("previewBody");
+        const previewClose = document.getElementById("previewClose");
+        const textarea = document.querySelector(".editor__textarea");
+
+        const openPreview = () => {
+          const text = textarea.value || "";
+          previewBody.innerHTML = "";
+
+          const container = document.createElement("div");
+          container.className = "preview-markdown";
+
+          // mermaid ブロックを抽出し div.mermaid に変換
+          const parts = text.split(/```/);
+          let hasMermaid = false;
+          for (let i = 0; i < parts.length; i++) {
+            if (i % 2 === 1) {
+              const block = parts[i];
+              const firstLine = block.split("\n")[0].trim();
+              if (firstLine === "mermaid") {
+                const code = block.split("\n").slice(1).join("\n");
+                const el = document.createElement("div");
+                el.className = "mermaid";
+                el.textContent = code;
+                container.appendChild(el);
+                hasMermaid = true;
+                continue;
+              }
+            }
+            if (parts[i].trim()) {
+              const p = document.createElement("pre");
+              p.textContent = parts[i];
+              container.appendChild(p);
+            }
+          }
+
+          // Mermaidなしの場合もプレーンテキストで表示
+          if (!container.childElementCount) {
+            const p = document.createElement("pre");
+            p.textContent = text || "(プレビュー対象がありません)";
+            container.appendChild(p);
+          }
+
+          previewBody.appendChild(container);
+          modal.hidden = false;
+          backdrop.hidden = false;
+
+          if (hasMermaid && typeof mermaid !== "undefined") {
+            mermaid.initialize({ startOnLoad: false, theme: "dark" });
+            mermaid.run({ querySelector: ".preview-modal .mermaid" });
+          }
+        };
+
+        const closePreview = () => {
+          modal.hidden = true;
+          backdrop.hidden = true;
+        };
+
+        previewBtn?.addEventListener("click", openPreview);
+        previewClose?.addEventListener("click", closePreview);
+        backdrop?.addEventListener("click", closePreview);
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !modal.hidden) {
+            closePreview();
+          }
+        });
       })();
     </script>
   </body>
