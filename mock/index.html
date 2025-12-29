@@ -173,10 +173,30 @@ graph TD
               const firstLine = block.split("\n")[0].trim();
               if (firstLine === "mermaid") {
                 const code = block.split("\n").slice(1).join("\n");
+                const wrapper = document.createElement("div");
+                wrapper.className = "mermaid-block";
+                const copyBtn = document.createElement("button");
+                copyBtn.type = "button";
+                copyBtn.className = "copy-button";
+                copyBtn.textContent = "コピー";
+                copyBtn.addEventListener("click", async () => {
+                  try {
+                    await navigator.clipboard.writeText("```mermaid\n" + code + "\n```");
+                    copyBtn.textContent = "コピー済";
+                    setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                  } catch (e) {
+                    copyBtn.textContent = "失敗";
+                    setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                  }
+                });
+
                 const el = document.createElement("div");
                 el.className = "mermaid";
                 el.textContent = code;
-                container.appendChild(el);
+
+                wrapper.appendChild(copyBtn);
+                wrapper.appendChild(el);
+                container.appendChild(wrapper);
                 hasMermaid = true;
                 continue;
               }

@@ -11,6 +11,11 @@ export const elements = {
   statusTextEl: document.querySelector(".editor__status-text"),
   sidebarEl: document.querySelector(".sidebar"),
   sortToggleEl: document.getElementById("sortToggle"),
+  previewButtonEl: document.getElementById("previewButton"),
+  previewModalEl: document.getElementById("previewModal"),
+  previewBackdropEl: document.getElementById("previewBackdrop"),
+  previewBodyEl: document.getElementById("previewBody"),
+  previewCloseEl: document.getElementById("previewClose"),
 };
 
 export function ensureElementsExist() {
