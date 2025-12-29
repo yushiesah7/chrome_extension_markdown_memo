@@ -12,10 +12,12 @@ export const elements = {
   sidebarEl: document.querySelector(".sidebar"),
   sortToggleEl: document.getElementById("sortToggle"),
   previewButtonEl: document.getElementById("previewButton"),
-  previewModalEl: document.getElementById("previewModal"),
-  previewBackdropEl: document.getElementById("previewBackdrop"),
-  previewBodyEl: document.getElementById("previewBody"),
-  previewCloseEl: document.getElementById("previewClose"),
+  copyAllEl: document.getElementById("copyAll"),
+  modeEditEl: document.getElementById("modeEdit"),
+  modePreviewEl: document.getElementById("modePreview"),
+  editPanelEl: document.getElementById("editPanel"),
+  previewPanelEl: document.getElementById("previewPanel"),
+  previewContainerEl: document.getElementById("content"),
 };
 
 export function ensureElementsExist() {

@@ -4,6 +4,18 @@
   "version": "0.1.0",
   "description": "MarkdownメモとMermaidプレビューをローカルで扱えるChrome拡張です。",
   "permissions": ["storage"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/preview.html",
+        "src/preview.js",
+        "src/preview.css",
+        "src/preview_renderer.js",
+        "src/lib/mermaid.min.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "action": {
     "default_popup": "src/popup.html"
   },
