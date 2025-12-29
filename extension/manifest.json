@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Local Markdown Memo",
+  "name": "Mermaid Markdown Memo",
   "version": "0.1.0",
-  "description": "ローカルPC上でMarkdownメモを管理できるシンプルなChrome拡張です。",
+  "description": "MarkdownメモとMermaidプレビューをローカルで扱えるChrome拡張です。",
   "permissions": ["storage"],
   "action": {
     "default_popup": "src/popup.html"
