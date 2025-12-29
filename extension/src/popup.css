@@ -52,6 +52,7 @@
 
 .editor[data-theme="dark"] .preview {
   background: rgba(15, 23, 42, 0.78);
+  color: var(--color-text-dark);
 }
 
 body {
