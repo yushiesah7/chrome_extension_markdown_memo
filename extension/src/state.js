@@ -11,10 +11,11 @@ const state = {
 };
 
 export async function initializeState() {
-  const { notes, sortOrder, sortDirection } = await loadNotesData();
+  const { notes, sortOrder, sortDirection, activeNoteId } = await loadNotesData();
   state.notes = Array.isArray(notes) ? [...notes] : [];
   state.sortOrder = normalizeSortOrder(state.notes, Array.isArray(sortOrder) ? sortOrder : []);
   state.sortDirection = sortDirection === "asc" ? "asc" : "desc";
+  state.activeNoteId = activeNoteId || null;
   ensureActiveNote();
 }
 
@@ -115,7 +116,12 @@ export function getDraggedNoteId() {
 }
 
 export async function persistState() {
-  await persistNotesData(state.notes, state.sortOrder, state.sortDirection);
+  await persistNotesData(
+    state.notes,
+    state.sortOrder,
+    state.sortDirection,
+    state.activeNoteId
+  );
 }
 
 function normalizeSortOrder(notes, sortOrder) {

@@ -123,6 +123,8 @@ function handleNoteListClick(event) {
   const noteId = item.dataset.id;
   if (noteId === getActiveNoteId()) return;
   setActiveNoteId(noteId);
+  // 選択変更も即座に保存しておくことで、タブを開いた際に同じメモを表示できる
+  persistState();
   renderApp();
 }
 
