@@ -63,13 +63,16 @@
         <section>
           <h2>Mermaidの例（図を描く）</h2>
           <p>次のように書くと、プレビューで図になります。</p>
-          <pre><code>```mermaid
+          <details class="docs__details">
+            <summary>Mermaidコードを見る</summary>
+            <pre><code>```mermaid
 flowchart TD
   A[メモを書く] --> B[プレビューを見る]
   B --> C{図が必要？}
   C -->|はい| D[Mermaidを書く]
   C -->|いいえ| E[そのまま保存]
 ```</code></pre>
+          </details>
 
           <div class="mermaid">
 flowchart TD
@@ -87,6 +90,80 @@ flowchart TD
 
           <h3>Q. ネットに送信されますか？</h3>
           <p>このアプリは外部サーバーに送信する仕組みを持ちません。</p>
+        </section>
+
+        <section>
+          <h2>安全性とデータ保存（大事）</h2>
+          <p>
+            ここは「安心して使えるか」を判断するための説明です。
+            この説明は 2025/12/29 時点で、拡張の実装（manifest.json / storage.js）と公式ドキュメントを元にしています。
+          </p>
+
+          <h3>この拡張が持っている権限</h3>
+          <ul>
+            <li>権限は <strong>storage のみ</strong> です（メモを保存するため）。</li>
+            <li>サイトの読み取りや変更（host_permissions）は要求しません。</li>
+          </ul>
+
+          <h3>データはどこに保存される？</h3>
+          <p>
+            メモは Chrome 拡張の保存領域である <strong>chrome.storage.local</strong> に保存されます。
+            公式ドキュメントでは、local は「PC内に保存され、拡張を削除すると消える」と説明されています。
+          </p>
+
+          <h3>保存しているデータの中身（保存キー）</h3>
+          <p>この拡張は、次のキー名で保存しています（storage.js を根拠）。</p>
+          <ul>
+            <li><code>notes</code>：メモ本体（タイトル/本文/更新日時など）</li>
+            <li><code>noteSortOrder</code>：左の一覧の並び順</li>
+            <li><code>sortDirection</code>：並び替えの昇順/降順</li>
+          </ul>
+
+          <h3>データの流れ（Mermaid図）</h3>
+          <details class="docs__details">
+            <summary>Mermaidコードを見る</summary>
+            <pre><code>```mermaid
+flowchart LR
+  U["あなた"] -->|"文字を入力"| UI["拡張の画面"]
+  UI -->|"自動保存"| ST["Chromeの保存領域<br>chrome.storage.local"]
+  ST -->|"読み込み"| UI
+  UI -->|"プレビュー"| R["画面に表示<br>{Markdown / Mermaid}"]
+```
+            </code></pre>
+          </details>
+          <div class="mermaid">
+flowchart LR
+  U["あなた"] -->|"文字を入力"| UI["拡張の画面"]
+  UI -->|"自動保存"| ST["Chromeの保存領域<br>chrome.storage.local"]
+  ST -->|"読み込み"| UI
+  UI -->|"プレビュー"| R["画面に表示<br>{Markdown / Mermaid}"]
+          </div>
+
+          <h3>ネット送信はある？</h3>
+          <ul>
+            <li>この拡張は <strong>外部サーバーへ送る処理を持っていません</strong>（通信の仕組みを前提にしていません）。</li>
+            <li>保存先はあくまで <strong>あなたのChrome内</strong> です。</li>
+          </ul>
+
+          <h3>注意点（より正直な説明）</h3>
+          <ul>
+            <li><strong>拡張の保存領域は暗号化された保管庫ではありません</strong>。
+              公式のプライバシーガイドでも、機密データを拡張ストレージに保持しない注意喚起があります（該当ページは最終更新が古いので、考え方として参照）。
+            </li>
+            <li>この拡張は「パスワード」や「秘密鍵」などの保管用途には向きません。</li>
+          </ul>
+
+          <h3>自分のデータを確認/削除する方法</h3>
+          <ul>
+            <li>
+              <strong>確認</strong>：DevTools の Application &gt; Storage &gt; Extension Storage から確認できます。
+              （公式: Chrome DevTools の Extension Storage 画面）
+            </li>
+            <li>
+              <strong>削除</strong>：Chrome の「拡張機能を管理」画面からこの拡張を削除すると、localのデータも消えます。
+              （公式: Chrome ウェブストア ヘルプ「拡張機能を管理」）
+            </li>
+          </ul>
         </section>
       </main>
     </div>
