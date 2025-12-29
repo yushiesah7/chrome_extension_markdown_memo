@@ -7,6 +7,7 @@
     <!-- 本番UIと揃えるため、最終的には popup.css を優先する読み込み順 -->
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="../extension/src/popup.css" />
+    <link rel="stylesheet" href="../extension/src/preview.css" />
   </head>
   <body>
     <div class="app" data-theme="dark">
@@ -98,6 +99,15 @@
 
         <div class="editor__body">
           <section class="editor__panel editor__panel--edit" id="mockEditPanel">
+            <div class="md-toolbar" id="mdToolbar" role="toolbar" aria-label="Markdown挿入">
+              <button class="md-toolbar__button" id="mdH1" type="button" aria-label="見出し1を挿入">H1</button>
+              <button class="md-toolbar__button" id="mdH2" type="button" aria-label="見出し2を挿入">H2</button>
+              <button class="md-toolbar__button" id="mdBullet" type="button" aria-label="箇条書きを挿入">-</button>
+              <button class="md-toolbar__button" id="mdNumbered" type="button" aria-label="番号リストを挿入">1.</button>
+              <button class="md-toolbar__button" id="mdTask" type="button" aria-label="チェックリストを挿入">[ ]</button>
+              <button class="md-toolbar__button" id="mdCode" type="button" aria-label="コードブロックを挿入">```</button>
+              <button class="md-toolbar__button" id="mdMermaid" type="button" aria-label="Mermaidブロックを挿入">Mermaid</button>
+            </div>
             <textarea class="editor__textarea" aria-label="メモ本文" id="mockNoteBody">メモ本文サンプル
 
 ```mermaid
@@ -156,6 +166,102 @@ graph TD
         const textarea = document.getElementById("mockNoteBody");
         const previewBody = document.getElementById("mockPreviewBody");
         const copyAllBtn = document.getElementById("mockCopyAll");
+        const mdToolbar = document.getElementById("mdToolbar");
+
+        const dispatchInput = () => {
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        };
+
+        const applyLinePrefix = (prefix) => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const lineEnd = value.indexOf("\n", end);
+          const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+          const selectedBlock = value.slice(lineStart, blockEnd);
+          const lines = selectedBlock.split("\n");
+
+          const shouldRemove = lines.every((line) => line.startsWith(prefix));
+          const nextBlock = shouldRemove
+            ? lines.map((line) => line.slice(prefix.length)).join("\n")
+            : lines.map((line) => prefix + line).join("\n");
+          textarea.value = value.slice(0, lineStart) + nextBlock + value.slice(blockEnd);
+
+          const deltaPerLine = shouldRemove ? -prefix.length : prefix.length;
+          if (lines.length === 1 && start === end) {
+            const caret = Math.max(lineStart, start + deltaPerLine);
+            textarea.setSelectionRange(caret, caret);
+          } else {
+            const nextStart = Math.max(lineStart, start + deltaPerLine);
+            const nextEnd = Math.max(lineStart, end + deltaPerLine * lines.length);
+            textarea.setSelectionRange(nextStart, nextEnd);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        const applyNumberedList = () => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const lineEnd = value.indexOf("\n", end);
+          const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+          const selectedBlock = value.slice(lineStart, blockEnd);
+          const lines = selectedBlock.split("\n");
+
+          const nextLines = lines.map((line, idx) => `${idx + 1}. ${line}`);
+          textarea.value = value.slice(0, lineStart) + nextLines.join("\n") + value.slice(blockEnd);
+
+          const prefixLenFirst = `${1}. `.length;
+          if (lines.length === 1 && start === end) {
+            const caret = start + prefixLenFirst;
+            textarea.setSelectionRange(caret, caret);
+          } else {
+            const totalPrefix = nextLines.reduce((acc, _, idx) => acc + `${idx + 1}. `.length, 0);
+            textarea.setSelectionRange(start + prefixLenFirst, end + totalPrefix);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        const wrapWithBlock = (opening, afterOpening, closing, placeholder = "") => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const selected = value.slice(start, end);
+          const content = selected || placeholder;
+          const insert = `${opening}${afterOpening}${content}${closing}`;
+
+          textarea.value = value.slice(0, start) + insert + value.slice(end);
+
+          if (selected) {
+            const nextStart = start + opening.length + afterOpening.length;
+            const nextEnd = nextStart + selected.length;
+            textarea.setSelectionRange(nextStart, nextEnd);
+          } else {
+            const caret = start + opening.length + afterOpening.length;
+            textarea.setSelectionRange(caret, caret);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        document.getElementById("mdH1")?.addEventListener("click", () => applyLinePrefix("# "));
+        document.getElementById("mdH2")?.addEventListener("click", () => applyLinePrefix("## "));
+        document.getElementById("mdBullet")?.addEventListener("click", () => applyLinePrefix("- "));
+        document.getElementById("mdTask")?.addEventListener("click", () => applyLinePrefix("- [ ] "));
+        document.getElementById("mdNumbered")?.addEventListener("click", () => applyNumberedList());
+        document.getElementById("mdCode")?.addEventListener("click", () => wrapWithBlock("```", "\n", "\n```"));
+        document.getElementById("mdMermaid")?.addEventListener("click", () =>
+          wrapWithBlock(
+            "```mermaid",
+            "\n",
+            "\n```",
+            'flowchart TD\n  A["Start"] --> B["Next"]\n'
+          )
+        );
 
         const renderPreview = () => {
           const text = textarea.value || "";
@@ -244,6 +350,9 @@ graph TD
           const isEdit = mode === "edit";
           editPanel.hidden = !isEdit;
           previewPanel.hidden = isEdit;
+          if (mdToolbar) {
+            mdToolbar.hidden = !isEdit;
+          }
           modeEdit.setAttribute("aria-pressed", isEdit ? "true" : "false");
           modePreview.setAttribute("aria-pressed", isEdit ? "false" : "true");
           if (!isEdit) renderPreview();

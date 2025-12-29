@@ -37,6 +37,7 @@ async function init() {
   bindCopyAll();
   // 編集しながらプレビューを更新（プレビュー表示中のみ）
   bindLivePreview();
+  bindMarkdownToolbar();
 
   // 画面を描画（一覧/エディタ/メタ情報）
   renderApp();
@@ -48,11 +49,16 @@ function bindModeToggle() {
   const { modeEditEl, modePreviewEl, editPanelEl, previewPanelEl } = elements;
   if (!modeEditEl || !modePreviewEl || !editPanelEl || !previewPanelEl) return;
 
+  const toolbar = document.getElementById("mdToolbar");
+
   const setMode = (mode) => {
     const isEdit = mode === "edit";
     // 編集: textarea / プレビュー: rendered view
     editPanelEl.hidden = !isEdit;
     previewPanelEl.hidden = isEdit;
+    if (toolbar) {
+      toolbar.hidden = !isEdit;
+    }
     modeEditEl.setAttribute("aria-pressed", isEdit ? "true" : "false");
     modePreviewEl.setAttribute("aria-pressed", isEdit ? "false" : "true");
     if (!isEdit) {
@@ -80,6 +86,125 @@ function bindCopyAll() {
       setTimeout(() => (copyAllEl.textContent = "全文コピー"), 1200);
     }
   });
+}
+
+function bindMarkdownToolbar() {
+  const textarea = elements.noteBodyEl;
+  const toolbar = document.getElementById("mdToolbar");
+  if (!textarea || !toolbar) return;
+
+  const h1 = document.getElementById("mdH1");
+  const h2 = document.getElementById("mdH2");
+  const bullet = document.getElementById("mdBullet");
+  const numbered = document.getElementById("mdNumbered");
+  const task = document.getElementById("mdTask");
+  const code = document.getElementById("mdCode");
+  const mermaid = document.getElementById("mdMermaid");
+
+  h1?.addEventListener("click", () => applyLinePrefix(textarea, "# "));
+  h2?.addEventListener("click", () => applyLinePrefix(textarea, "## "));
+  bullet?.addEventListener("click", () => applyLinePrefix(textarea, "- "));
+  task?.addEventListener("click", () => applyLinePrefix(textarea, "- [ ] "));
+  numbered?.addEventListener("click", () => applyNumberedList(textarea));
+  code?.addEventListener("click", () => wrapWithBlock(textarea, "```", "\n", "\n```"));
+  mermaid?.addEventListener("click", () =>
+    wrapWithBlock(
+      textarea,
+      "```mermaid",
+      "\n",
+      "\n```",
+      'flowchart TD\n  A["Start"] --> B["Next"]\n'
+    )
+  );
+}
+
+function dispatchInput(textarea) {
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function applyLinePrefix(textarea, prefix) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const lineEnd = value.indexOf("\n", end);
+  const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+  const selectedBlock = value.slice(lineStart, blockEnd);
+  const lines = selectedBlock.split("\n");
+
+  const shouldRemove = lines.every((line) => line.startsWith(prefix));
+  const nextBlock = shouldRemove
+    ? lines.map((line) => line.slice(prefix.length)).join("\n")
+    : lines.map((line) => prefix + line).join("\n");
+  const nextValue = value.slice(0, lineStart) + nextBlock + value.slice(blockEnd);
+
+  textarea.value = nextValue;
+
+  const isSingleLine = lines.length === 1;
+  const deltaPerLine = shouldRemove ? -prefix.length : prefix.length;
+  if (isSingleLine && start === end) {
+    const caret = Math.max(lineStart, start + deltaPerLine);
+    textarea.setSelectionRange(caret, caret);
+  } else {
+    const nextStart = Math.max(lineStart, start + deltaPerLine);
+    const nextEnd = Math.max(lineStart, end + deltaPerLine * lines.length);
+    textarea.setSelectionRange(nextStart, nextEnd);
+  }
+  textarea.focus();
+  dispatchInput(textarea);
+}
+
+function applyNumberedList(textarea) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const lineEnd = value.indexOf("\n", end);
+  const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+  const selectedBlock = value.slice(lineStart, blockEnd);
+  const lines = selectedBlock.split("\n");
+
+  const nextLines = lines.map((line, idx) => `${idx + 1}. ${line}`);
+  const nextBlock = nextLines.join("\n");
+  const nextValue = value.slice(0, lineStart) + nextBlock + value.slice(blockEnd);
+
+  textarea.value = nextValue;
+
+  const prefixLenFirst = `${1}. `.length;
+  if (lines.length === 1 && start === end) {
+    const caret = start + prefixLenFirst;
+    textarea.setSelectionRange(caret, caret);
+  } else {
+    const totalPrefix = nextLines.reduce((acc, _, idx) => acc + `${idx + 1}. `.length, 0);
+    textarea.setSelectionRange(start + prefixLenFirst, end + totalPrefix);
+  }
+  textarea.focus();
+  dispatchInput(textarea);
+}
+
+function wrapWithBlock(textarea, opening, afterOpening, closing, placeholder = "") {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  const selected = value.slice(start, end);
+  const content = selected || placeholder;
+  const insert = `${opening}${afterOpening}${content}${closing}`;
+
+  textarea.value = value.slice(0, start) + insert + value.slice(end);
+
+  if (selected) {
+    const nextStart = start + opening.length + afterOpening.length;
+    const nextEnd = nextStart + selected.length;
+    textarea.setSelectionRange(nextStart, nextEnd);
+  } else {
+    const caret = start + opening.length + afterOpening.length;
+    textarea.setSelectionRange(caret, caret);
+  }
+  textarea.focus();
+  dispatchInput(textarea);
 }
 
 function bindLivePreview() {

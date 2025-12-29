@@ -86,6 +86,15 @@
 
         <div class="editor__body">
           <section class="editor__panel editor__panel--edit" id="editPanel">
+            <div class="md-toolbar" id="mdToolbar" role="toolbar" aria-label="Markdown挿入">
+              <button class="md-toolbar__button" id="mdH1" type="button" aria-label="見出し1を挿入">H1</button>
+              <button class="md-toolbar__button" id="mdH2" type="button" aria-label="見出し2を挿入">H2</button>
+              <button class="md-toolbar__button" id="mdBullet" type="button" aria-label="箇条書きを挿入">-</button>
+              <button class="md-toolbar__button" id="mdNumbered" type="button" aria-label="番号リストを挿入">1.</button>
+              <button class="md-toolbar__button" id="mdTask" type="button" aria-label="チェックリストを挿入">[ ]</button>
+              <button class="md-toolbar__button" id="mdCode" type="button" aria-label="コードブロックを挿入">```</button>
+              <button class="md-toolbar__button" id="mdMermaid" type="button" aria-label="Mermaidブロックを挿入">Mermaid</button>
+            </div>
             <textarea class="editor__textarea" id="noteBody" aria-label="メモ本文" placeholder="メモ本文を入力してください"></textarea>
           </section>
           <section class="editor__panel editor__panel--preview" id="previewPanel" hidden>
