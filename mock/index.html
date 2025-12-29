@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mock - Mermaid Markdown Memo</title>
+    <!-- 本番UIと揃えるため、最終的には popup.css を優先する読み込み順 -->
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="../extension/src/popup.css" />
   </head>
   <body>
     <div class="app" data-theme="dark">
@@ -15,6 +17,7 @@
           </div>
           <div class="sidebar__header-actions">
             <span class="badge" aria-live="polite">2</span>
+            <button class="docs-button" type="button" aria-label="仕様書を開く">仕様書</button>
             <button class="icon-button" id="mockSortToggle" type="button" title="更新順で並べ替え" aria-label="更新順で並べ替え">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="7 7 12 2 17 7"></polyline>
@@ -158,7 +161,7 @@ graph TD
           const text = textarea.value || "";
           previewBody.innerHTML = "";
           const container = document.createElement("div");
-          container.className = "preview-markdown";
+          container.className = "preview preview-markdown";
 
           const parts = text.split(/```/);
           let hasMermaid = false;
