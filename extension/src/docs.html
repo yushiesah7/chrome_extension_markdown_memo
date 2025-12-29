@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>仕様書 | Mermaid Markdown Memo</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="stylesheet" href="docs.css" />
+  </head>
+  <body>
+    <div class="docs">
+      <header class="docs__header">
+        <div class="docs__title">
+          <h1>仕様書</h1>
+          <p>Mermaid Markdown Memo の使い方（やさしい版） - 2025/12/29 時点</p>
+        </div>
+        <div class="docs__actions">
+          <button class="button--ghost" id="close">閉じる</button>
+        </div>
+      </header>
+
+      <main class="docs__content" id="content">
+        <section>
+          <h2>このアプリでできること</h2>
+          <p>
+            これは「Markdown（マークダウン）」でメモを書き、必要に応じて
+            Mermaid（図を描くための記法）をプレビューできるメモアプリです。
+          </p>
+          <ul>
+            <li>メモを作る / 消す / 切り替える</li>
+            <li>Markdownで見出しや箇条書きが書ける</li>
+            <li>Mermaidでフローチャートなどの図が作れる</li>
+            <li>タブで「編集」と「プレビュー」を切り替えられる</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>はじめての使い方</h2>
+          <h3>1. 新しいメモを作る</h3>
+          <p>左上の「＋」ボタンで新しいメモが作れます。</p>
+
+          <h3>2. メモを切り替える</h3>
+          <p>左の一覧からメモをクリックすると、そのメモが開きます。</p>
+
+          <h3>3. 全文コピー</h3>
+          <p>左上の「全文コピー」ボタンで本文をまるごとクリップボードへコピーできます。</p>
+
+          <h3>3. 編集 / プレビュー</h3>
+          <p>
+            タブで開いた画面では「編集」「プレビュー」を切り替えられます。
+            編集は文字を書く画面、プレビューは見た目を確認する画面です。
+          </p>
+          <p>
+            タブ画面の編集欄の上には Markdown 挿入ツールバー（H1/H2/箇条書き/番号/チェック/コード/Mermaid）があります。
+            ボタンを押すとカーソル位置や選択行にプレフィックスを付けたり、コード/mermaidを囲んだりできます。
+          </p>
+        </section>
+
+        <section>
+          <h2>Markdownの例</h2>
+          <p>例えば、箇条書きは次のように書けます。</p>
+          <pre><code>- りんご
+- みかん
+- ぶどう</code></pre>
+          <p>
+            さらに、箇条書きの行末でEnterを押すと、次の行に自動で「- 」が入るようにしています。
+          </p>
+
+          <h3>チェックリスト</h3>
+          <pre><code>- [ ] やることA
+- [x] 済んだことB</code></pre>
+          <p>Enterで次行にも <code>- [ ] </code> が入ります（プレフィックスだけの行は終了）。プレビューではチェックボックスとして表示されます。</p>
+        </section>
+
+        <section>
+          <h2>Mermaidの例（図を描く）</h2>
+          <p>次のように書くと、プレビューで図になります。</p>
+          <details class="docs__details">
+            <summary>Mermaidコードを見る</summary>
+            <pre><code>```mermaid
+flowchart TD
+  A[メモを書く] --> B[プレビューを見る]
+  B --> C{図が必要？}
+  C -->|はい| D[Mermaidを書く]
+  C -->|いいえ| E[そのまま保存]
+```</code></pre>
+          </details>
+
+          <div class="mermaid">
+flowchart TD
+  A[メモを書く] --> B[プレビューを見る]
+  B --> C{図が必要？}
+  C -->|はい| D[Mermaidを書く]
+  C -->|いいえ| E[そのまま保存]
+          </div>
+        </section>
+
+        <section>
+          <h2>よくある質問</h2>
+          <h3>Q. データはどこに保存されますか？</h3>
+          <p>この拡張の中（Chromeのローカル保存領域）に保存されます。</p>
+
+          <h3>Q. ネットに送信されますか？</h3>
+          <p>このアプリは外部サーバーに送信する仕組みを持ちません。</p>
+        </section>
+
+        <section>
+          <h2>安全性とデータ保存（大事）</h2>
+          <p>
+            ここは「安心して使えるか」を判断するための説明です。
+            この説明は 2025/12/29 時点で、拡張の実装（manifest.json / storage.js）と公式ドキュメントを元にしています。
+          </p>
+
+          <h3>この拡張が持っている権限</h3>
+          <ul>
+            <li>権限は <strong>storage のみ</strong> です（メモを保存するため）。</li>
+            <li>サイトの読み取りや変更（host_permissions）は要求しません。</li>
+          </ul>
+
+          <h3>データはどこに保存される？</h3>
+          <p>
+            メモは Chrome 拡張の保存領域である <strong>chrome.storage.local</strong> に保存されます。
+            公式ドキュメントでは、local は「PC内に保存され、拡張を削除すると消える」と説明されています。
+          </p>
+
+          <h3>保存しているデータの中身（保存キー）</h3>
+          <p>この拡張は、次のキー名で保存しています（storage.js を根拠）。</p>
+          <ul>
+            <li><code>notes</code>：メモ本体（タイトル/本文/更新日時など）</li>
+            <li><code>noteSortOrder</code>：左の一覧の並び順</li>
+            <li><code>sortDirection</code>：並び替えの昇順/降順</li>
+            <li><code>activeNoteId</code>：最後に開いていたメモID（タブでも同じメモを開くため）</li>
+          </ul>
+
+          <h3>データの流れ（Mermaid図）</h3>
+          <details class="docs__details">
+            <summary>Mermaidコードを見る</summary>
+            <pre><code>```mermaid
+flowchart LR
+  U["あなた"] -->|"文字を入力"| UI["拡張の画面"]
+  UI -->|"自動保存"| ST["Chromeの保存領域<br>chrome.storage.local"]
+  ST -->|"読み込み"| UI
+  UI -->|"プレビュー"| R["画面に表示<br>{Markdown / Mermaid}"]
+```
+            </code></pre>
+          </details>
+          <div class="mermaid">
+flowchart LR
+  U["あなた"] -->|"文字を入力"| UI["拡張の画面"]
+  UI -->|"自動保存"| ST["Chromeの保存領域<br>chrome.storage.local"]
+  ST -->|"読み込み"| UI
+  UI -->|"プレビュー"| R["画面に表示<br>{Markdown / Mermaid}"]
+          </div>
+
+          <h3>ネット送信はある？</h3>
+          <ul>
+            <li>この拡張は <strong>外部サーバーへ送る処理を持っていません</strong>（通信の仕組みを前提にしていません）。</li>
+            <li>保存先はあくまで <strong>あなたのChrome内</strong> です。</li>
+          </ul>
+
+          <h3>注意点（より正直な説明）</h3>
+          <ul>
+            <li><strong>拡張の保存領域は暗号化された保管庫ではありません</strong>。
+              公式のプライバシーガイドでも、機密データを拡張ストレージに保持しない注意喚起があります（該当ページは最終更新が古いので、考え方として参照）。
+            </li>
+            <li>この拡張は「パスワード」や「秘密鍵」などの保管用途には向きません。</li>
+          </ul>
+
+          <h3>自分のデータを確認/削除する方法</h3>
+          <ul>
+            <li>
+              <strong>確認</strong>：DevTools の Application &gt; Storage &gt; Extension Storage から確認できます。
+              （公式: Chrome DevTools の Extension Storage 画面）
+            </li>
+            <li>
+              <strong>削除</strong>：Chrome の「拡張機能を管理」画面からこの拡張を削除すると、localのデータも消えます。
+              （公式: Chrome ウェブストア ヘルプ「拡張機能を管理」）
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="lib/mermaid.min.js"></script>
+    <script type="module" src="docs.js"></script>
+  </body>
+</html>

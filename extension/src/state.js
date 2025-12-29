@@ -5,14 +5,17 @@ const DEFAULT_NOTE_TITLE = "新しいメモ";
 const state = {
   notes: [],
   sortOrder: [],
+  sortDirection: "desc",
   activeNoteId: null,
   draggedNoteId: null,
 };
 
 export async function initializeState() {
-  const { notes, sortOrder } = await loadNotesData();
+  const { notes, sortOrder, sortDirection, activeNoteId } = await loadNotesData();
   state.notes = Array.isArray(notes) ? [...notes] : [];
   state.sortOrder = normalizeSortOrder(state.notes, Array.isArray(sortOrder) ? sortOrder : []);
+  state.sortDirection = sortDirection === "asc" ? "asc" : "desc";
+  state.activeNoteId = activeNoteId || null;
   ensureActiveNote();
 }
 
@@ -22,6 +25,17 @@ export function getNotes() {
 
 export function getSortOrder() {
   return state.sortOrder;
+}
+
+export function setSortOrder(order) {
+  if (!Array.isArray(order)) return;
+  const noteIds = new Set(state.notes.map((note) => note.id));
+  state.sortOrder = order.filter((id) => noteIds.has(id));
+  ensureActiveNote();
+}
+
+export function getSortDirection() {
+  return state.sortDirection;
 }
 
 export function getActiveNoteId() {
@@ -89,6 +103,10 @@ export function reorderNotes(sourceId, targetId) {
   state.sortOrder.splice(toIndex, 0, sourceId);
 }
 
+export function setSortDirection(direction) {
+  state.sortDirection = direction === "asc" ? "asc" : "desc";
+}
+
 export function setDraggedNoteId(noteId) {
   state.draggedNoteId = noteId;
 }
@@ -98,7 +116,12 @@ export function getDraggedNoteId() {
 }
 
 export async function persistState() {
-  await persistNotesData(state.notes, state.sortOrder);
+  await persistNotesData(
+    state.notes,
+    state.sortOrder,
+    state.sortDirection,
+    state.activeNoteId
+  );
 }
 
 function normalizeSortOrder(notes, sortOrder) {

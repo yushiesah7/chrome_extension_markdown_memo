@@ -1,0 +1,136 @@
+.preview-markdown pre {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  color: rgba(226, 232, 240, 0.9);
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* タブ画面で縦いっぱい使うためのレイアウト調整 */
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 18px 18px 14px;
+  gap: 14px;
+}
+
+.editor__body {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+}
+
+.editor__panel {
+  flex: 1;
+  display: flex;
+}
+
+.editor__panel--edit {
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.md-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.md-toolbar__button {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(226, 232, 240, 0.92);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+.md-toolbar__button:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.md-toolbar__button:active {
+  transform: translateY(1px);
+}
+
+.editor__textarea {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.preview-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.code-block {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.74);
+  padding: 12px 12px 8px;
+}
+
+.code-block pre {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.preview-markdown .mermaid {
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.mermaid-block {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 10px 10px 6px;
+  background: rgba(15, 23, 42, 0.78);
+  max-height: 520px;
+  overflow: auto;
+}
+
+.mermaid-block .mermaid {
+  padding: 8px;
+  border: none;
+  background: transparent;
+}
+
+.mermaid-block .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.block-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.info {
+  color: rgba(148, 163, 184, 0.86);
+  font-size: 12px;
+}

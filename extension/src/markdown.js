@@ -80,7 +80,19 @@ export function renderMarkdown(text) {
         html.push("<ul>");
         inUl = true;
       }
-      html.push(`<li>${formatInline(ulMatch[1])}</li>`);
+      const itemText = ulMatch[1];
+      const taskMatch = itemText.match(/^\[([ xX])\]\s+(.*)$/);
+      if (taskMatch) {
+        const checked = String(taskMatch[1]).toLowerCase() === "x";
+        const content = formatInline(taskMatch[2]);
+        html.push(
+          `<li class="task-list-item"><input type="checkbox" disabled${
+            checked ? " checked" : ""
+          }> ${content}</li>`
+        );
+      } else {
+        html.push(`<li>${formatInline(itemText)}</li>`);
+      }
       continue;
     }
 

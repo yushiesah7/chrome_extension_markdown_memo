@@ -3,20 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mock - Local Markdown Memo</title>
+    <title>Mock - Mermaid Markdown Memo</title>
+    <!-- 本番UIと揃えるため、最終的には popup.css を優先する読み込み順 -->
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="../extension/src/popup.css" />
+    <link rel="stylesheet" href="../extension/src/preview.css" />
   </head>
   <body>
-    <div class="app">
-      <aside class="sidebar" data-theme="dark">
+    <div class="app" data-theme="dark">
+      <aside class="sidebar">
         <header class="sidebar__header">
           <div class="sidebar__title-group">
             <h1 class="sidebar__title">メモ</h1>
-            <p class="sidebar__subtitle">ひらめきをすぐに記録</p>
           </div>
           <div class="sidebar__header-actions">
             <span class="badge" aria-live="polite">2</span>
-            <button class="icon-button icon-button--primary" title="新規メモを作成" aria-label="新規メモを作成" type="button">
+            <button class="docs-button" type="button" aria-label="仕様書を開く">仕様書</button>
+            <button class="icon-button" id="mockSortToggle" type="button" title="更新順で並べ替え" aria-label="更新順で並べ替え">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="7 7 12 2 17 7"></polyline>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+                <polyline points="17 17 12 22 7 17"></polyline>
+              </svg>
+              <span class="visually-hidden">更新順ソート</span>
+            </button>
+            <button class="icon-button icon-button--primary" id="mockCreate" title="新規メモを作成" aria-label="新規メモを作成" type="button">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -27,7 +38,7 @@
         </header>
 
         <ul class="note-list" aria-label="メモ一覧">
-          <li class="note-list__item note-list__item--active" tabindex="0">
+          <li class="note-list__item note-list__item--active" tabindex="0" data-updated-at="1734886733000">
             <p class="note-list__title">新しいメモ</p>
             <div class="note-list__footer">
               <span class="note-list__meta">更新: 2025/12/22 23:18:53</span>
@@ -43,7 +54,7 @@
             </div>
           </li>
 
-          <li class="note-list__item" tabindex="0">
+          <li class="note-list__item" tabindex="0" data-updated-at="1769862361000">
             <p class="note-list__title">あいうえさっっっっっっ…</p>
             <div class="note-list__footer">
               <span class="note-list__meta">更新: 2025/10/04 20:26:01</span>
@@ -69,9 +80,14 @@
           </div>
 
           <div class="editor__actions">
-            <button class="icon-button" title="メモを削除" aria-label="メモを削除" type="button">
+            <div class="segmented">
+              <button class="segmented__button" id="mockModeEdit" aria-pressed="true">編集</button>
+              <button class="segmented__button" id="mockModePreview" aria-pressed="false">プレビュー</button>
+            </div>
+            <button class="copy-button" id="mockCopyAll" type="button">全文コピー</button>
+            <button class="icon-button" id="mockDelete" title="メモを削除" aria-label="メモを削除" type="button">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6" />
+                <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6" />
                 <path d="M14 11v6" />
@@ -81,14 +97,34 @@
           </div>
         </div>
 
-        <textarea class="editor__textarea" aria-label="メモ本文">水２００
-ソーダ３００
-ミックス４００
-ミルク６００
-１３９００
-13900
-11200
-18600gh</textarea>
+        <div class="editor__body">
+          <section class="editor__panel editor__panel--edit" id="mockEditPanel">
+            <div class="md-toolbar" id="mdToolbar" role="toolbar" aria-label="Markdown挿入">
+              <button class="md-toolbar__button" id="mdH1" type="button" aria-label="見出し1を挿入">H1</button>
+              <button class="md-toolbar__button" id="mdH2" type="button" aria-label="見出し2を挿入">H2</button>
+              <button class="md-toolbar__button" id="mdBullet" type="button" aria-label="箇条書きを挿入">-</button>
+              <button class="md-toolbar__button" id="mdNumbered" type="button" aria-label="番号リストを挿入">1.</button>
+              <button class="md-toolbar__button" id="mdTask" type="button" aria-label="チェックリストを挿入">[ ]</button>
+              <button class="md-toolbar__button" id="mdCode" type="button" aria-label="コードブロックを挿入">```</button>
+              <button class="md-toolbar__button" id="mdMermaid" type="button" aria-label="Mermaidブロックを挿入">Mermaid</button>
+            </div>
+            <textarea class="editor__textarea" aria-label="メモ本文" id="mockNoteBody">メモ本文サンプル
+
+```mermaid
+graph TD
+  A[Start] --> B[Next]
+  B --> C{Decision}
+  C -->|Yes| D[Done]
+  C -->|No| A
+```
+
+箇条書きなどもこの下に続けて書けます。
+</textarea>
+          </section>
+          <section class="editor__panel editor__panel--preview" id="mockPreviewPanel" hidden>
+            <div class="preview-container" id="mockPreviewBody"></div>
+          </section>
+        </div>
 
         <div class="editor__status" aria-live="polite">
           <span class="status-indicator" aria-hidden="true"></span>
@@ -96,5 +132,310 @@
         </div>
       </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+      (() => {
+        const sortBtn = document.getElementById("mockSortToggle");
+        const list = document.querySelector(".note-list");
+        let dir = "desc";
+
+        const apply = () => {
+          const items = Array.from(list.querySelectorAll("li[data-updated-at]"));
+          items
+            .sort((a, b) => {
+              const at = Number(a.dataset.updatedAt) || 0;
+              const bt = Number(b.dataset.updatedAt) || 0;
+              return dir === "asc" ? at - bt : bt - at;
+            })
+            .forEach((el) => list.appendChild(el));
+        };
+
+        sortBtn?.addEventListener("click", () => {
+          dir = dir === "asc" ? "desc" : "asc";
+          apply();
+        });
+
+        apply();
+
+        // 編集/プレビューモード切替
+        const modeEdit = document.getElementById("mockModeEdit");
+        const modePreview = document.getElementById("mockModePreview");
+        const editPanel = document.getElementById("mockEditPanel");
+        const previewPanel = document.getElementById("mockPreviewPanel");
+        const textarea = document.getElementById("mockNoteBody");
+        const previewBody = document.getElementById("mockPreviewBody");
+        const copyAllBtn = document.getElementById("mockCopyAll");
+        const mdToolbar = document.getElementById("mdToolbar");
+
+        const dispatchInput = () => {
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        };
+
+        const applyLinePrefix = (prefix) => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const lineEnd = value.indexOf("\n", end);
+          const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+          const selectedBlock = value.slice(lineStart, blockEnd);
+          const lines = selectedBlock.split("\n");
+
+          const shouldRemove = lines.every((line) => line.startsWith(prefix));
+          const nextBlock = shouldRemove
+            ? lines.map((line) => line.slice(prefix.length)).join("\n")
+            : lines.map((line) => prefix + line).join("\n");
+          textarea.value = value.slice(0, lineStart) + nextBlock + value.slice(blockEnd);
+
+          const deltaPerLine = shouldRemove ? -prefix.length : prefix.length;
+          if (lines.length === 1 && start === end) {
+            const caret = Math.max(lineStart, start + deltaPerLine);
+            textarea.setSelectionRange(caret, caret);
+          } else {
+            const nextStart = Math.max(lineStart, start + deltaPerLine);
+            const nextEnd = Math.max(lineStart, end + deltaPerLine * lines.length);
+            textarea.setSelectionRange(nextStart, nextEnd);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        const applyNumberedList = () => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const lineEnd = value.indexOf("\n", end);
+          const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+          const selectedBlock = value.slice(lineStart, blockEnd);
+          const lines = selectedBlock.split("\n");
+
+          const nextLines = lines.map((line, idx) => `${idx + 1}. ${line}`);
+          textarea.value = value.slice(0, lineStart) + nextLines.join("\n") + value.slice(blockEnd);
+
+          const prefixLenFirst = `${1}. `.length;
+          if (lines.length === 1 && start === end) {
+            const caret = start + prefixLenFirst;
+            textarea.setSelectionRange(caret, caret);
+          } else {
+            const totalPrefix = nextLines.reduce((acc, _, idx) => acc + `${idx + 1}. `.length, 0);
+            textarea.setSelectionRange(start + prefixLenFirst, end + totalPrefix);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        const wrapWithBlock = (opening, afterOpening, closing, placeholder = "") => {
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const selected = value.slice(start, end);
+          const content = selected || placeholder;
+          const insert = `${opening}${afterOpening}${content}${closing}`;
+
+          textarea.value = value.slice(0, start) + insert + value.slice(end);
+
+          if (selected) {
+            const nextStart = start + opening.length + afterOpening.length;
+            const nextEnd = nextStart + selected.length;
+            textarea.setSelectionRange(nextStart, nextEnd);
+          } else {
+            const caret = start + opening.length + afterOpening.length;
+            textarea.setSelectionRange(caret, caret);
+          }
+          textarea.focus();
+          dispatchInput();
+        };
+
+        document.getElementById("mdH1")?.addEventListener("click", () => applyLinePrefix("# "));
+        document.getElementById("mdH2")?.addEventListener("click", () => applyLinePrefix("## "));
+        document.getElementById("mdBullet")?.addEventListener("click", () => applyLinePrefix("- "));
+        document.getElementById("mdTask")?.addEventListener("click", () => applyLinePrefix("- [ ] "));
+        document.getElementById("mdNumbered")?.addEventListener("click", () => applyNumberedList());
+        document.getElementById("mdCode")?.addEventListener("click", () => wrapWithBlock("```", "\n", "\n```"));
+        document.getElementById("mdMermaid")?.addEventListener("click", () =>
+          wrapWithBlock(
+            "```mermaid",
+            "\n",
+            "\n```",
+            'flowchart TD\n  A["Start"] --> B["Next"]\n'
+          )
+        );
+
+        const renderPreview = () => {
+          const text = textarea.value || "";
+          previewBody.innerHTML = "";
+          const container = document.createElement("div");
+          container.className = "preview preview-markdown";
+
+          const parts = text.split(/```/);
+          let hasMermaid = false;
+          for (let i = 0; i < parts.length; i++) {
+            if (i % 2 === 1) {
+              const block = parts[i];
+              const firstLine = block.split("\\n")[0].trim();
+              if (firstLine === "mermaid") {
+                const code = block.split("\\n").slice(1).join("\\n");
+                const wrapper = document.createElement("div");
+                wrapper.className = "mermaid-block";
+                const copyBtn = document.createElement("button");
+                copyBtn.type = "button";
+                copyBtn.className = "copy-button";
+                copyBtn.textContent = "コピー";
+                copyBtn.addEventListener("click", async () => {
+                  try {
+                    await navigator.clipboard.writeText("```mermaid\\n" + code + "\\n```");
+                    copyBtn.textContent = "コピー済";
+                    setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                  } catch (e) {
+                    copyBtn.textContent = "失敗";
+                    setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                  }
+                });
+
+                const el = document.createElement("div");
+                el.className = "mermaid";
+                el.textContent = code;
+
+                wrapper.appendChild(copyBtn);
+                wrapper.appendChild(el);
+                container.appendChild(wrapper);
+                hasMermaid = true;
+                continue;
+              }
+            }
+            if (parts[i].trim()) {
+              const wrapper = document.createElement("div");
+              wrapper.className = "code-block";
+              const copyBtn = document.createElement("button");
+              copyBtn.type = "button";
+              copyBtn.className = "copy-button";
+              copyBtn.textContent = "コピー";
+              const codeText = parts[i];
+              copyBtn.addEventListener("click", async () => {
+                try {
+                  await navigator.clipboard.writeText(codeText);
+                  copyBtn.textContent = "コピー済";
+                  setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                } catch (e) {
+                  copyBtn.textContent = "失敗";
+                  setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
+                }
+              });
+
+              const p = document.createElement("pre");
+              p.textContent = parts[i];
+
+              wrapper.appendChild(copyBtn);
+              wrapper.appendChild(p);
+              container.appendChild(wrapper);
+            }
+          }
+
+          if (!container.childElementCount) {
+            const p = document.createElement("pre");
+            p.textContent = text || "(プレビュー対象がありません)";
+            container.appendChild(p);
+          }
+
+          previewBody.appendChild(container);
+          if (hasMermaid && typeof mermaid !== "undefined") {
+            mermaid.initialize({ startOnLoad: false, theme: "dark" });
+            mermaid.run({ querySelector: ".preview-container .mermaid" });
+          }
+        };
+
+        const setMode = (mode) => {
+          const isEdit = mode === "edit";
+          editPanel.hidden = !isEdit;
+          previewPanel.hidden = isEdit;
+          if (mdToolbar) {
+            mdToolbar.hidden = !isEdit;
+          }
+          modeEdit.setAttribute("aria-pressed", isEdit ? "true" : "false");
+          modePreview.setAttribute("aria-pressed", isEdit ? "false" : "true");
+          if (!isEdit) renderPreview();
+        };
+
+        modeEdit?.addEventListener("click", () => setMode("edit"));
+        modePreview?.addEventListener("click", () => setMode("preview"));
+        textarea?.addEventListener("input", () => {
+          if (!previewPanel.hidden) renderPreview();
+        });
+        let isComposing = false;
+        let lastEnterWithShift = false;
+
+        textarea?.addEventListener("compositionstart", () => {
+          isComposing = true;
+        });
+        textarea?.addEventListener("compositionend", () => {
+          isComposing = false;
+        });
+        textarea?.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          lastEnterWithShift = Boolean(e.shiftKey);
+        });
+        textarea?.addEventListener("beforeinput", (e) => {
+          if (isComposing) return;
+          if (e.inputType !== "insertLineBreak") return;
+          if (lastEnterWithShift) {
+            lastEnterWithShift = false;
+            return;
+          }
+          lastEnterWithShift = false;
+
+          const value = textarea.value;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          if (start !== end) return;
+          const nextNewline = value.indexOf("\\n", start);
+          if (nextNewline !== -1 && nextNewline !== start) return;
+
+          const before = value.slice(0, start);
+          const after = value.slice(end);
+          const lineStart = before.lastIndexOf("\\n") + 1;
+          const currentLine = before.slice(lineStart);
+
+          const matchUnordered = currentLine.match(/^(\\s*)([-*+])\\s+/);
+          const matchOrdered = currentLine.match(/^(\\s*)(\\d+)\\.\\s+/);
+          if (!matchUnordered && !matchOrdered) return;
+
+          e.preventDefault();
+          const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
+          const prefix = matchUnordered
+            ? `${indent}${matchUnordered[2]} `
+            : `${indent}${Number(matchOrdered[2]) + 1}. `;
+          const isLineOnlyPrefix = matchUnordered
+            ? currentLine.trim() === `${matchUnordered[2]}`
+            : currentLine.trim() === `${matchOrdered[2]}.`;
+          const insert = isLineOnlyPrefix ? "\\n" : `\\n${prefix}`;
+          const newPos = before.length + insert.length;
+          textarea.value = before + insert + after;
+          textarea.setSelectionRange(newPos, newPos);
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        copyAllBtn?.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(textarea.value || "");
+            copyAllBtn.textContent = "コピー済";
+            setTimeout(() => (copyAllBtn.textContent = "全文コピー"), 1200);
+          } catch (e) {
+            copyAllBtn.textContent = "失敗";
+            setTimeout(() => (copyAllBtn.textContent = "全文コピー"), 1200);
+          }
+        });
+
+        // 新規メモボタン (モックでは件数バッジのみ増やすサンプル)
+        const badge = document.querySelector(".badge");
+        document.getElementById("mockCreate")?.addEventListener("click", () => {
+          const current = Number(badge.textContent) || 0;
+          badge.textContent = String(current + 1);
+        });
+
+        setMode("edit");
+      })();
+    </script>
   </body>
 </html>

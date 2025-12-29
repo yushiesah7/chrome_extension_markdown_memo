@@ -1,6 +1,6 @@
 import { elements } from "./dom.js";
 
-export function renderNoteList({ notes, sortOrder, activeNoteId }) {
+export function renderNoteList({ notes, sortOrder, sortDirection = "desc", activeNoteId }) {
   const { noteListEl, noteCountEl } = elements;
   if (!noteListEl) return;
 
@@ -21,7 +21,13 @@ export function renderNoteList({ notes, sortOrder, activeNoteId }) {
 
   const noteMap = new Map(notes.map((note) => [note.id, note]));
 
-  for (const noteId of sortOrder) {
+  // 並べ替えは外部で行われた sortOrder を優先し、未定義時のみ元配列順
+  const orderToUse =
+    Array.isArray(sortOrder) && sortOrder.length > 0
+      ? sortOrder
+      : notes.map((note) => note.id);
+
+  for (const noteId of orderToUse) {
     const note = noteMap.get(noteId);
     if (!note) continue;
     const item = createNoteListItem(note, note.id === activeNoteId);

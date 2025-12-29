@@ -4,6 +4,9 @@ import {
   getDraggedNoteId,
   getNotes,
   getSortOrder,
+  getSortDirection,
+  setSortDirection,
+  setSortOrder,
   createNote,
   deleteNote,
   updateActiveNote,
@@ -19,24 +22,56 @@ const AUTO_SAVE_DELAY = 400;
 let autoSaveTimeout = null;
 let statusResetTimeout = null;
 
-export function attachEventListeners() {
-  const { createBtn, deleteBtn, noteTitleEl, noteBodyEl, noteListEl } = elements;
+let isComposing = false;
+let lastEnterWithShift = false;
 
+export function attachEventListeners() {
+  const {
+    createBtn,
+    deleteBtn,
+    noteTitleEl,
+    noteBodyEl,
+    noteListEl,
+    sortToggleEl,
+    previewButtonEl,
+    openDocsEl,
+  } = elements;
+
+  // 新規メモを作成
   createBtn.addEventListener("click", handleCreateNote);
+  // 現在のメモを削除
   deleteBtn.addEventListener("click", () => handleDeleteNote());
+  // タイトル/本文の編集
   noteTitleEl.addEventListener("input", handleEditorChange);
   noteBodyEl.addEventListener("input", handleEditorChange);
+  noteBodyEl.addEventListener("compositionstart", handleCompositionStart);
+  noteBodyEl.addEventListener("compositionend", handleCompositionEnd);
+  noteBodyEl.addEventListener("keydown", handleEditorKeydown);
+  noteBodyEl.addEventListener("beforeinput", handleEditorBeforeInput);
 
+  // メモ一覧のクリック（選択/削除）
   noteListEl.addEventListener("click", handleNoteListClick);
   noteListEl.addEventListener("dragstart", handleDragStart);
   noteListEl.addEventListener("dragend", handleDragEnd);
   noteListEl.addEventListener("dragover", handleDragOver);
+
+  // 並び替え（昇順/降順）
+  sortToggleEl.addEventListener("click", handleSortToggle);
+
+  // 仕様書を開く
+  openDocsEl?.addEventListener("click", handleOpenDocs);
+
+  if (!document.body.dataset.previewTab && previewButtonEl) {
+    // タブ（編集/プレビュー）を開く
+    previewButtonEl.addEventListener("click", handlePreviewOpen);
+  }
 }
 
 export function renderApp() {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
   updateEditor(getActiveNote());
@@ -67,6 +102,7 @@ function handleEditorChange() {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
   updateActiveNoteMeta(note);
@@ -87,6 +123,8 @@ function handleNoteListClick(event) {
   const noteId = item.dataset.id;
   if (noteId === getActiveNoteId()) return;
   setActiveNoteId(noteId);
+  // 選択変更も即座に保存しておくことで、タブを開いた際に同じメモを表示できる
+  persistState();
   renderApp();
 }
 
@@ -117,9 +155,139 @@ function handleDragOver(event) {
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
+    sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
   scheduleAutoSave();
+}
+
+function handleSortToggle() {
+  const current = getSortDirection();
+  const next = current === "asc" ? "desc" : "asc";
+  setSortDirection(next);
+  const sortedIds = [...getNotes()]
+    .sort((a, b) => {
+      const aTime = a?.updatedAt || a?.createdAt || 0;
+      const bTime = b?.updatedAt || b?.createdAt || 0;
+      return next === "asc" ? aTime - bTime : bTime - aTime;
+    })
+    .map((note) => note.id);
+  setSortOrder(sortedIds);
+  renderNoteList({
+    notes: getNotes(),
+    sortOrder: getSortOrder(),
+    sortDirection: next,
+    activeNoteId: getActiveNoteId(),
+  });
+  scheduleAutoSave();
+}
+
+function handlePreviewOpen() {
+  // タブ側は拡張の保存領域から直接ロードするため、payload受け渡しは不要。
+  const url = chrome.runtime.getURL("src/preview.html");
+  openInNewTab(url, "プレビューを開けませんでした");
+}
+
+function handleOpenDocs() {
+  const url = chrome.runtime.getURL("src/docs.html");
+  openInNewTab(url, "仕様書を開けませんでした");
+}
+
+function openInNewTab(url, fallbackMessage) {
+  try {
+    const opened = window.open(url, "_blank");
+    if (opened) return;
+  } catch (e) {
+    // ignore
+  }
+  try {
+    chrome.tabs?.create?.({ url });
+  } catch (error) {
+    console.error("タブのオープンに失敗しました", error);
+    setStatus("idle", fallbackMessage);
+  }
+}
+
+function handleCompositionStart() {
+  isComposing = true;
+}
+
+function handleCompositionEnd() {
+  isComposing = false;
+}
+
+function handleEditorKeydown(event) {
+  // beforeinput 側で insertLineBreak を扱うため、ここでは Shift+Enter 判定だけ保持
+  if (event.key !== "Enter") return;
+  lastEnterWithShift = Boolean(event.shiftKey);
+}
+
+function handleEditorBeforeInput(event) {
+  if (isComposing) return;
+  if (event.inputType !== "insertLineBreak") return;
+
+  const target = event.target;
+  if (!(target instanceof HTMLTextAreaElement)) return;
+
+  // Shift+Enter は通常改行
+  if (lastEnterWithShift) {
+    lastEnterWithShift = false;
+    return;
+  }
+  lastEnterWithShift = false;
+
+  const value = target.value;
+  const start = target.selectionStart;
+  const end = target.selectionEnd;
+  if (start !== end) return;
+
+  // 行末以外では通常の改行
+  const nextNewline = value.indexOf("\n", start);
+  if (nextNewline !== -1 && nextNewline !== start) return;
+
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+
+  const lineStart = before.lastIndexOf("\n") + 1;
+  const currentLine = before.slice(lineStart);
+
+  const matchTask = currentLine.match(/^(\s*)([-*+])\s+\[([ xX])\]\s*(.*)$/);
+  if (matchTask) {
+    event.preventDefault();
+
+    const indent = matchTask[1];
+    const bullet = matchTask[2];
+    const rest = matchTask[4] || "";
+    const isLineOnlyPrefix = rest.trim().length === 0;
+
+    const insert = isLineOnlyPrefix ? "\n" : `\n${indent}${bullet} [ ] `;
+    const newPos = before.length + insert.length;
+    target.value = before + insert + after;
+    target.setSelectionRange(newPos, newPos);
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  const matchUnordered = currentLine.match(/^(\s*)([-*+])\s+/);
+  const matchOrdered = currentLine.match(/^(\s*)(\d+)\.\s+/);
+  if (!matchUnordered && !matchOrdered) return;
+
+  event.preventDefault();
+
+  const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
+  const prefix = matchUnordered
+    ? `${indent}${matchUnordered[2]} `
+    : `${indent}${Number(matchOrdered[2]) + 1}. `;
+
+  const isLineOnlyPrefix = matchUnordered
+    ? currentLine.trim() === `${matchUnordered[2]}`
+    : currentLine.trim() === `${matchOrdered[2]}.`;
+
+  const insert = isLineOnlyPrefix ? "\n" : `\n${prefix}`;
+  const newPos = before.length + insert.length;
+  target.value = before + insert + after;
+  target.setSelectionRange(newPos, newPos);
+  target.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function scheduleAutoSave() {

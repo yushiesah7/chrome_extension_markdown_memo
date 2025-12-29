@@ -10,13 +10,29 @@ export const elements = {
   statusIndicatorEl: document.querySelector(".status-indicator"),
   statusTextEl: document.querySelector(".editor__status-text"),
   sidebarEl: document.querySelector(".sidebar"),
+  sortToggleEl: document.getElementById("sortToggle"),
+  previewButtonEl: document.getElementById("previewButton"),
+  openDocsEl: document.getElementById("openDocs"),
+  copyAllEl: document.getElementById("copyAll"),
+  modeEditEl: document.getElementById("modeEdit"),
+  modePreviewEl: document.getElementById("modePreview"),
+  editPanelEl: document.getElementById("editPanel"),
+  previewPanelEl: document.getElementById("previewPanel"),
+  previewContainerEl: document.getElementById("content"),
 };
 
 export function ensureElementsExist() {
-  const missing = Object.entries(elements)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+  const requiredKeys = [
+    "noteListEl",
+    "noteTitleEl",
+    "noteBodyEl",
+    "createBtn",
+    "deleteBtn",
+    "sidebarEl",
+    "sortToggleEl",
+  ];
 
+  const missing = requiredKeys.filter((key) => !elements[key]);
   if (missing.length > 0) {
     throw new Error(`必須DOM要素が見つかりません: ${missing.join(", ")}`);
   }
