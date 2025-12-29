@@ -243,6 +243,23 @@ function handleEditorBeforeInput(event) {
   const lineStart = before.lastIndexOf("\n") + 1;
   const currentLine = before.slice(lineStart);
 
+  const matchTask = currentLine.match(/^(\s*)([-*+])\s+\[([ xX])\]\s*(.*)$/);
+  if (matchTask) {
+    event.preventDefault();
+
+    const indent = matchTask[1];
+    const bullet = matchTask[2];
+    const rest = matchTask[4] || "";
+    const isLineOnlyPrefix = rest.trim().length === 0;
+
+    const insert = isLineOnlyPrefix ? "\n" : `\n${indent}${bullet} [ ] `;
+    const newPos = before.length + insert.length;
+    target.value = before + insert + after;
+    target.setSelectionRange(newPos, newPos);
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
   const matchUnordered = currentLine.match(/^(\s*)([-*+])\s+/);
   const matchOrdered = currentLine.match(/^(\s*)(\d+)\.\s+/);
   if (!matchUnordered && !matchOrdered) return;
