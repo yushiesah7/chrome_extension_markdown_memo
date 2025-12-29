@@ -165,6 +165,14 @@ function handleSortToggle() {
   const current = getSortDirection();
   const next = current === "asc" ? "desc" : "asc";
   setSortDirection(next);
+  const sortedIds = [...getNotes()]
+    .sort((a, b) => {
+      const aTime = a?.updatedAt || a?.createdAt || 0;
+      const bTime = b?.updatedAt || b?.createdAt || 0;
+      return next === "asc" ? aTime - bTime : bTime - aTime;
+    })
+    .map((note) => note.id);
+  setSortOrder(sortedIds);
   renderNoteList({
     notes: getNotes(),
     sortOrder: getSortOrder(),
