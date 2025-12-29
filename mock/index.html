@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mock - Local Markdown Memo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar" data-theme="dark">
+        <header class="sidebar__header">
+          <div class="sidebar__title-group">
+            <h1 class="sidebar__title">メモ</h1>
+            <p class="sidebar__subtitle">ひらめきをすぐに記録</p>
+          </div>
+          <div class="sidebar__header-actions">
+            <span class="badge" aria-live="polite">2</span>
+            <button class="icon-button icon-button--primary" title="新規メモを作成" aria-label="新規メモを作成" type="button">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span class="visually-hidden">新しいメモ</span>
+            </button>
+          </div>
+        </header>
+
+        <ul class="note-list" aria-label="メモ一覧">
+          <li class="note-list__item note-list__item--active" tabindex="0">
+            <p class="note-list__title">新しいメモ</p>
+            <div class="note-list__footer">
+              <span class="note-list__meta">更新: 2025/12/22 23:18:53</span>
+              <button class="note-list__delete" type="button" aria-label="このメモを削除">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            </div>
+          </li>
+
+          <li class="note-list__item" tabindex="0">
+            <p class="note-list__title">あいうえさっっっっっっ…</p>
+            <div class="note-list__footer">
+              <span class="note-list__meta">更新: 2025/10/04 20:26:01</span>
+              <button class="note-list__delete" type="button" aria-label="このメモを削除">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            </div>
+          </li>
+        </ul>
+      </aside>
+
+      <main class="editor" data-theme="dark" aria-live="polite">
+        <div class="editor__header">
+          <div class="editor__title-wrapper">
+            <input class="editor__title-input" type="text" value="新しいメモ" aria-label="メモタイトル" />
+            <span class="editor__meta">最終更新: 2025/12/22 23:18:53</span>
+          </div>
+
+          <div class="editor__actions">
+            <button class="icon-button" title="メモを削除" aria-label="メモを削除" type="button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <textarea class="editor__textarea" aria-label="メモ本文">水２００
+ソーダ３００
+ミックス４００
+ミルク６００
+１３９００
+13900
+11200
+18600gh</textarea>
+
+        <div class="editor__status" aria-live="polite">
+          <span class="status-indicator" aria-hidden="true"></span>
+          <span class="editor__status-text">編集中</span>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
