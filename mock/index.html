@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mock - Local Markdown Memo</title>
+    <title>Mock - Mermaid Markdown Memo</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app">
-      <aside class="sidebar" data-theme="dark">
+    <div class="app" data-theme="dark">
+      <aside class="sidebar">
         <header class="sidebar__header">
           <div class="sidebar__title-group">
             <h1 class="sidebar__title">メモ</h1>
@@ -23,7 +23,7 @@
               </svg>
               <span class="visually-hidden">更新順ソート</span>
             </button>
-            <button class="icon-button icon-button--primary" title="新規メモを作成" aria-label="新規メモを作成" type="button">
+            <button class="icon-button icon-button--primary" id="mockCreate" title="新規メモを作成" aria-label="新規メモを作成" type="button">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -76,10 +76,12 @@
           </div>
 
           <div class="editor__actions">
-            <button class="button--ghost" id="previewButton" type="button" aria-label="Markdownプレビュー（Mermaid対応）">
-              プレビュー
-            </button>
-            <button class="icon-button" title="メモを削除" aria-label="メモを削除" type="button">
+            <div class="segmented">
+              <button class="segmented__button" id="mockModeEdit" aria-pressed="true">編集</button>
+              <button class="segmented__button" id="mockModePreview" aria-pressed="false">プレビュー</button>
+            </div>
+            <button class="copy-button" id="mockCopyAll" type="button">全文コピー</button>
+            <button class="icon-button" id="mockDelete" title="メモを削除" aria-label="メモを削除" type="button">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -91,7 +93,9 @@
           </div>
         </div>
 
-        <textarea class="editor__textarea" aria-label="メモ本文">メモ本文サンプル
+        <div class="editor__body">
+          <section class="editor__panel editor__panel--edit" id="mockEditPanel">
+            <textarea class="editor__textarea" aria-label="メモ本文" id="mockNoteBody">メモ本文サンプル
 
 ```mermaid
 graph TD
@@ -103,28 +107,17 @@ graph TD
 
 箇条書きなどもこの下に続けて書けます。
 </textarea>
+          </section>
+          <section class="editor__panel editor__panel--preview" id="mockPreviewPanel" hidden>
+            <div class="preview-container" id="mockPreviewBody"></div>
+          </section>
+        </div>
 
         <div class="editor__status" aria-live="polite">
           <span class="status-indicator" aria-hidden="true"></span>
           <span class="editor__status-text">編集中</span>
         </div>
       </main>
-    </div>
-    <div class="preview-backdrop" id="previewBackdrop" hidden></div>
-    <div class="preview-modal" id="previewModal" hidden>
-      <div class="preview-modal__header">
-        <h2 class="preview-modal__title">プレビュー</h2>
-        <div class="preview-modal__actions">
-          <button class="copy-button" id="previewCopyAll" type="button">全文コピー</button>
-          <button class="icon-button" id="previewClose" aria-label="閉じる" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="preview-modal__body" id="previewBody"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
@@ -152,31 +145,29 @@ graph TD
 
         apply();
 
-        // Mermaid preview
-        const previewBtn = document.getElementById("previewButton");
-        const modal = document.getElementById("previewModal");
-        const backdrop = document.getElementById("previewBackdrop");
-        const previewBody = document.getElementById("previewBody");
-        const previewClose = document.getElementById("previewClose");
-        const previewCopyAll = document.getElementById("previewCopyAll");
-        const textarea = document.querySelector(".editor__textarea");
+        // 編集/プレビューモード切替
+        const modeEdit = document.getElementById("mockModeEdit");
+        const modePreview = document.getElementById("mockModePreview");
+        const editPanel = document.getElementById("mockEditPanel");
+        const previewPanel = document.getElementById("mockPreviewPanel");
+        const textarea = document.getElementById("mockNoteBody");
+        const previewBody = document.getElementById("mockPreviewBody");
+        const copyAllBtn = document.getElementById("mockCopyAll");
 
-        const openPreview = () => {
+        const renderPreview = () => {
           const text = textarea.value || "";
           previewBody.innerHTML = "";
-
           const container = document.createElement("div");
           container.className = "preview-markdown";
 
-          // mermaid ブロックを抽出し div.mermaid に変換
           const parts = text.split(/```/);
           let hasMermaid = false;
           for (let i = 0; i < parts.length; i++) {
             if (i % 2 === 1) {
               const block = parts[i];
-              const firstLine = block.split("\n")[0].trim();
+              const firstLine = block.split("\\n")[0].trim();
               if (firstLine === "mermaid") {
-                const code = block.split("\n").slice(1).join("\n");
+                const code = block.split("\\n").slice(1).join("\\n");
                 const wrapper = document.createElement("div");
                 wrapper.className = "mermaid-block";
                 const copyBtn = document.createElement("button");
@@ -185,7 +176,7 @@ graph TD
                 copyBtn.textContent = "コピー";
                 copyBtn.addEventListener("click", async () => {
                   try {
-                    await navigator.clipboard.writeText("```mermaid\n" + code + "\n```");
+                    await navigator.clipboard.writeText("```mermaid\\n" + code + "\\n```");
                     copyBtn.textContent = "コピー済";
                     setTimeout(() => (copyBtn.textContent = "コピー"), 1200);
                   } catch (e) {
@@ -233,7 +224,6 @@ graph TD
             }
           }
 
-          // Mermaidなしの場合もプレーンテキストで表示
           if (!container.childElementCount) {
             const p = document.createElement("pre");
             p.textContent = text || "(プレビュー対象がありません)";
@@ -241,40 +231,46 @@ graph TD
           }
 
           previewBody.appendChild(container);
-          modal.hidden = false;
-          backdrop.hidden = false;
-
           if (hasMermaid && typeof mermaid !== "undefined") {
             mermaid.initialize({ startOnLoad: false, theme: "dark" });
-            mermaid.run({ querySelector: ".preview-modal .mermaid" });
+            mermaid.run({ querySelector: ".preview-container .mermaid" });
           }
         };
 
-        const closePreview = () => {
-          modal.hidden = true;
-          backdrop.hidden = true;
+        const setMode = (mode) => {
+          const isEdit = mode === "edit";
+          editPanel.hidden = !isEdit;
+          previewPanel.hidden = isEdit;
+          modeEdit.setAttribute("aria-pressed", isEdit ? "true" : "false");
+          modePreview.setAttribute("aria-pressed", isEdit ? "false" : "true");
+          if (!isEdit) renderPreview();
         };
 
-        previewCopyAll?.addEventListener("click", async () => {
-          const text = textarea.value || "";
+        modeEdit?.addEventListener("click", () => setMode("edit"));
+        modePreview?.addEventListener("click", () => setMode("preview"));
+        textarea?.addEventListener("input", () => {
+          if (!previewPanel.hidden) renderPreview();
+        });
+
+        copyAllBtn?.addEventListener("click", async () => {
           try {
-            await navigator.clipboard.writeText(text);
-            previewCopyAll.textContent = "コピー済";
-            setTimeout(() => (previewCopyAll.textContent = "全文コピー"), 1200);
+            await navigator.clipboard.writeText(textarea.value || "");
+            copyAllBtn.textContent = "コピー済";
+            setTimeout(() => (copyAllBtn.textContent = "全文コピー"), 1200);
           } catch (e) {
-            previewCopyAll.textContent = "失敗";
-            setTimeout(() => (previewCopyAll.textContent = "全文コピー"), 1200);
+            copyAllBtn.textContent = "失敗";
+            setTimeout(() => (copyAllBtn.textContent = "全文コピー"), 1200);
           }
         });
 
-        previewBtn?.addEventListener("click", openPreview);
-        previewClose?.addEventListener("click", closePreview);
-        backdrop?.addEventListener("click", closePreview);
-        window.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && !modal.hidden) {
-            closePreview();
-          }
+        // 新規メモボタン (モックでは件数バッジのみ増やすサンプル)
+        const badge = document.querySelector(".badge");
+        document.getElementById("mockCreate")?.addEventListener("click", () => {
+          const current = Number(badge.textContent) || 0;
+          badge.textContent = String(current + 1);
         });
+
+        setMode("edit");
       })();
     </script>
   </body>

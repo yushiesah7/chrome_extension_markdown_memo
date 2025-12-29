@@ -21,10 +21,17 @@ export const elements = {
 };
 
 export function ensureElementsExist() {
-  const missing = Object.entries(elements)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+  const requiredKeys = [
+    "noteListEl",
+    "noteTitleEl",
+    "noteBodyEl",
+    "createBtn",
+    "deleteBtn",
+    "sidebarEl",
+    "sortToggleEl",
+  ];
 
+  const missing = requiredKeys.filter((key) => !elements[key]);
   if (missing.length > 0) {
     throw new Error(`必須DOM要素が見つかりません: ${missing.join(", ")}`);
   }
