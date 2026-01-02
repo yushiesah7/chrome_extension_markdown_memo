@@ -24,6 +24,7 @@ let statusResetTimeout = null;
 
 let isComposing = false;
 let lastEnterWithShift = false;
+const TAB_INDENT = "  ";
 
 export function attachEventListeners() {
   const {
@@ -223,8 +224,25 @@ function handleCompositionEnd() {
 
 function handleEditorKeydown(event) {
   // beforeinput 側で insertLineBreak を扱うため、ここでは Shift+Enter 判定だけ保持
-  if (event.key !== "Enter") return;
-  lastEnterWithShift = Boolean(event.shiftKey);
+  if (event.key === "Enter") {
+    lastEnterWithShift = Boolean(event.shiftKey);
+    return;
+  }
+
+  // Tab / Shift+Tab でインデント（Markdownのネスト入力用）
+  if (event.key !== "Tab") return;
+  if (isComposing) return;
+
+  const target = event.target;
+  if (!(target instanceof HTMLTextAreaElement)) return;
+
+  event.preventDefault();
+
+  if (event.shiftKey) {
+    unindentTextArea(target, TAB_INDENT);
+  } else {
+    indentTextArea(target, TAB_INDENT);
+  }
 }
 
 function handleEditorBeforeInput(event) {
@@ -293,6 +311,107 @@ function handleEditorBeforeInput(event) {
   target.value = before + insert + after;
   target.setSelectionRange(newPos, newPos);
   target.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function indentTextArea(textarea, indent) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  if (start === end) {
+    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+    textarea.value = value.slice(0, lineStart) + indent + value.slice(lineStart);
+    const next = start + indent.length;
+    textarea.setSelectionRange(next, next);
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  const firstLineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const blockEndIndex = value.indexOf("\n", end);
+  const blockEnd = blockEndIndex === -1 ? value.length : blockEndIndex;
+  const block = value.slice(firstLineStart, blockEnd);
+  const lines = block.split("\n");
+
+  const nextBlock = lines.map((line) => indent + line).join("\n");
+
+  const startOffset = start - firstLineStart;
+  const endOffset = end - firstLineStart;
+  const startLineIndex = countNewlines(block, startOffset);
+  const endLineIndex = countNewlines(block, endOffset);
+  const addedBeforeStart = indent.length * (startLineIndex + 1);
+  const addedBeforeEnd = indent.length * (endLineIndex + 1);
+
+  textarea.value = value.slice(0, firstLineStart) + nextBlock + value.slice(blockEnd);
+  textarea.setSelectionRange(start + addedBeforeStart, end + addedBeforeEnd);
+  textarea.focus();
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function unindentTextArea(textarea, indent) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  const removePrefix = (line) => {
+    if (line.startsWith(indent)) return { line: line.slice(indent.length), removed: indent.length };
+    if (line.startsWith("\t")) return { line: line.slice(1), removed: 1 };
+    if (line.startsWith(" ")) return { line: line.slice(1), removed: 1 };
+    return { line, removed: 0 };
+  };
+
+  if (start === end) {
+    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+    const lineEndIndex = value.indexOf("\n", start);
+    const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+    const line = value.slice(lineStart, lineEnd);
+    const { line: nextLine, removed } = removePrefix(line);
+    if (removed === 0) return;
+
+    textarea.value = value.slice(0, lineStart) + nextLine + value.slice(lineEnd);
+    const next = Math.max(lineStart, start - removed);
+    textarea.setSelectionRange(next, next);
+    textarea.focus();
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  const firstLineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const blockEndIndex = value.indexOf("\n", end);
+  const blockEnd = blockEndIndex === -1 ? value.length : blockEndIndex;
+  const block = value.slice(firstLineStart, blockEnd);
+  const lines = block.split("\n");
+
+  const results = lines.map((line) => removePrefix(line));
+  const removeLens = results.map((r) => r.removed);
+  const nextBlock = results.map((r) => r.line).join("\n");
+
+  const startOffset = start - firstLineStart;
+  const endOffset = end - firstLineStart;
+  const startLineIndex = countNewlines(block, startOffset);
+  const endLineIndex = countNewlines(block, endOffset);
+
+  const removedBeforeStart = sum(removeLens, 0, startLineIndex);
+  const removedBeforeEnd = sum(removeLens, 0, endLineIndex);
+
+  textarea.value = value.slice(0, firstLineStart) + nextBlock + value.slice(blockEnd);
+  textarea.setSelectionRange(start - removedBeforeStart, end - removedBeforeEnd);
+  textarea.focus();
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function countNewlines(text, upToIndex) {
+  const chunk = text.slice(0, Math.max(0, upToIndex));
+  return (chunk.match(/\n/g) || []).length;
+}
+
+function sum(values, fromIndex, toIndex) {
+  let total = 0;
+  for (let i = fromIndex; i <= toIndex; i++) {
+    total += values[i] || 0;
+  }
+  return total;
 }
 
 function scheduleAutoSave() {
