@@ -300,7 +300,7 @@ function handleEditorBeforeInput(event) {
   const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
   const prefix = matchUnordered
     ? `${indent}${matchUnordered[2]} `
-    : buildNextOrderedPrefix(before.slice(0, lineStart), matchOrdered[1], matchOrdered[2]);
+    : `${indent}${Number(matchOrdered[2]) + 1}. `;
 
   const isLineOnlyPrefix = matchUnordered
     ? currentLine.trim() === `${matchUnordered[2]}`
@@ -311,19 +311,6 @@ function handleEditorBeforeInput(event) {
   target.value = before + insert + after;
   target.setSelectionRange(newPos, newPos);
   target.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-function buildNextOrderedPrefix(textBeforeCurrentLine, indent, currentNumberText) {
-  const currentNumber = Number(currentNumberText);
-  if (!Number.isFinite(currentNumber)) {
-    return `${indent}${currentNumberText}. `;
-  }
-
-  const prevNumber = findPreviousOrderedNumberAtIndent(textBeforeCurrentLine, indent);
-  const expectedCurrent = Number.isFinite(prevNumber) ? prevNumber + 1 : currentNumber;
-  const effectiveCurrent = expectedCurrent === currentNumber ? currentNumber : expectedCurrent;
-  const nextNumber = effectiveCurrent + 1;
-  return `${indent}${nextNumber}. `;
 }
 
 function findPreviousOrderedNumberAtIndent(text, indent) {
@@ -358,19 +345,23 @@ function indentTextArea(textarea, indent) {
     if (orderedMatch) {
       const existingIndentLen = orderedMatch[1].length;
       const numberText = orderedMatch[2];
+      const newIndent = indent + orderedMatch[1];
+      const desiredNumber = computeNextOrderedNumberAtIndent(value.slice(0, lineStart), newIndent);
+      const desiredNumberText = String(desiredNumber);
+
       const numberStart = lineStart + indent.length + existingIndentLen;
       const numberEnd = numberStart + numberText.length;
 
-      if (numberText !== "1") {
+      if (desiredNumberText !== numberText) {
         const updated = textarea.value;
         textarea.value =
-          updated.slice(0, numberStart) + "1" + updated.slice(numberEnd);
+          updated.slice(0, numberStart) + desiredNumberText + updated.slice(numberEnd);
 
-        const delta = 1 - numberText.length;
+        const delta = desiredNumberText.length - numberText.length;
         if (nextPos >= numberEnd) {
           nextPos += delta;
         } else if (nextPos > numberStart) {
-          nextPos = numberStart + 1;
+          nextPos = numberStart + desiredNumberText.length;
         }
       }
     }
@@ -422,8 +413,27 @@ function unindentTextArea(textarea, indent) {
     const { line: nextLine, removed } = removePrefix(line);
     if (removed === 0) return;
 
-    textarea.value = value.slice(0, lineStart) + nextLine + value.slice(lineEnd);
-    const next = Math.max(lineStart, start - removed);
+    const beforeLine = value.slice(0, lineStart);
+    const orderedMatch = nextLine.match(/^(\s*)(\d+)\.\s+/);
+    let patchedLine = nextLine;
+    let delta = 0;
+
+    if (orderedMatch) {
+      const desiredNumber = computeNextOrderedNumberAtIndent(beforeLine, orderedMatch[1]);
+      const desiredNumberText = String(desiredNumber);
+      if (desiredNumberText !== orderedMatch[2]) {
+        const numberStartInLine = orderedMatch[1].length;
+        const numberEndInLine = numberStartInLine + orderedMatch[2].length;
+        patchedLine =
+          nextLine.slice(0, numberStartInLine) +
+          desiredNumberText +
+          nextLine.slice(numberEndInLine);
+        delta = desiredNumberText.length - orderedMatch[2].length;
+      }
+    }
+
+    textarea.value = beforeLine + patchedLine + value.slice(lineEnd);
+    const next = Math.max(lineStart, start - removed + delta);
     textarea.setSelectionRange(next, next);
     textarea.focus();
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
@@ -457,6 +467,11 @@ function unindentTextArea(textarea, indent) {
 function countNewlines(text, upToIndex) {
   const chunk = text.slice(0, Math.max(0, upToIndex));
   return (chunk.match(/\n/g) || []).length;
+}
+
+function computeNextOrderedNumberAtIndent(textBeforeLine, indent) {
+  const prev = findPreviousOrderedNumberAtIndent(textBeforeLine, indent);
+  return Number.isFinite(prev) ? prev + 1 : 1;
 }
 
 function sum(values, fromIndex, toIndex) {
