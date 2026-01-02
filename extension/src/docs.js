@@ -2,7 +2,26 @@ function init() {
   // 仕様書ページ（docs.html）内の閉じるボタン
   const closeBtn = document.getElementById("close");
   closeBtn?.addEventListener("click", () => {
-    window.close();
+    // タブで開かれた場合は window.close() が効かないことがあるため、フォールバックを用意する
+    try {
+      window.close();
+    } catch (e) {
+      // ignore
+    }
+
+    // closeが失敗した場合のフォールバック（戻る or 案内表示）
+    setTimeout(() => {
+      if (window.closed) return;
+      try {
+        if (typeof history !== "undefined" && history.length > 1) {
+          history.back();
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+      showNotice("このページは自動で閉じられません。ブラウザの「×」で閉じてください。");
+    }, 100);
   });
 
   const contentEl = document.getElementById("content");

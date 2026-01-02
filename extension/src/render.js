@@ -182,6 +182,9 @@ function createNoteListItem(note, isActive) {
 
   if (isActive) {
     item.classList.add("note-list__item--active");
+    item.setAttribute("aria-current", "true");
+  } else {
+    item.removeAttribute("aria-current");
   }
 
   const title = document.createElement("p");

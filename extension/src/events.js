@@ -59,6 +59,7 @@ export function attachEventListeners() {
 
   // メモ一覧のクリック（選択/削除）
   noteListEl.addEventListener("click", handleNoteListClick);
+  noteListEl.addEventListener("keydown", handleNoteListKeydown);
   noteListEl.addEventListener("dragstart", handleDragStart);
   noteListEl.addEventListener("dragend", handleDragEnd);
   noteListEl.addEventListener("dragover", handleDragOver);
@@ -130,7 +131,26 @@ function handleNoteListClick(event) {
 
   const item = event.target.closest("li[data-id]");
   if (!item) return;
-  const noteId = item.dataset.id;
+  selectNoteId(item.dataset.id);
+}
+
+function handleNoteListKeydown(event) {
+  // Enter/Spaceでメモ選択（アクセシビリティ/キーボード操作）
+  const key = event.key;
+  if (key !== "Enter" && key !== " ") return;
+
+  // 削除ボタンなどネイティブ操作がある要素は、既定動作に任せる
+  if (event.target.closest?.(".note-list__delete")) return;
+
+  const item = event.target.closest?.("li[data-id]");
+  if (!item) return;
+
+  event.preventDefault();
+  selectNoteId(item.dataset.id);
+}
+
+function selectNoteId(noteId) {
+  if (!noteId) return;
   if (noteId === getActiveNoteId()) return;
   setActiveNoteId(noteId);
   // 選択変更も即座に保存しておくことで、タブを開いた際に同じメモを表示できる
