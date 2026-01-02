@@ -25,6 +25,8 @@ let statusResetTimeout = null;
 let isComposing = false;
 let lastEnterWithShift = false;
 const TAB_INDENT = "  ";
+const ORDERED_LIST_MARKER_MODE = "ordered"; // "one" or "ordered"（Markdown All in One互換）
+const ORDERED_LIST_AUTO_RENUMBER = true;
 
 export function attachEventListeners() {
   const {
@@ -229,20 +231,20 @@ function handleEditorKeydown(event) {
     return;
   }
 
-  // Tab / Shift+Tab でインデント（Markdownのネスト入力用）
-  if (event.key !== "Tab") return;
   if (isComposing) return;
 
   const target = event.target;
   if (!(target instanceof HTMLTextAreaElement)) return;
 
-  event.preventDefault();
-
-  if (event.shiftKey) {
-    unindentTextArea(target, TAB_INDENT);
-  } else {
-    indentTextArea(target, TAB_INDENT);
+  if (event.key === "Backspace") {
+    handleListBackspace(target, event);
+    return;
   }
+
+  // Tab / Shift+Tab でインデント（Markdownのネスト入力用）
+  if (event.key !== "Tab") return;
+
+  handleListTab(target, event);
 }
 
 function handleEditorBeforeInput(event) {
@@ -292,122 +294,123 @@ function handleEditorBeforeInput(event) {
   }
 
   const matchUnordered = currentLine.match(/^(\s*)([-*+])\s+/);
-  const matchOrdered = currentLine.match(/^(\s*)(\d+)\.\s+/);
+  const matchOrdered = currentLine.match(/^(\s*)(\d+)([.)])(\s+)(\[[ xX]\]\s+)?/);
   if (!matchUnordered && !matchOrdered) return;
 
   event.preventDefault();
 
   const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
-  const prefix = matchUnordered
-    ? `${indent}${matchUnordered[2]} `
-    : `${indent}${Number(matchOrdered[2]) + 1}. `;
+  const prefix = matchUnordered ? `${indent}${matchUnordered[2]} ` : buildNextOrderedPrefix(matchOrdered);
 
-  const isLineOnlyPrefix = matchUnordered
-    ? currentLine.trim() === `${matchUnordered[2]}`
-    : currentLine.trim() === `${matchOrdered[2]}.`;
+  const isLineOnlyPrefix = (() => {
+    if (matchUnordered) {
+      const rest = currentLine.slice(matchUnordered[0].length);
+      return rest.trim().length === 0;
+    }
+    const rest = currentLine.slice(matchOrdered[0].length);
+    return rest.trim().length === 0;
+  })();
 
   const insert = isLineOnlyPrefix ? "\n" : `\n${prefix}`;
   const newPos = before.length + insert.length;
   target.value = before + insert + after;
   target.setSelectionRange(newPos, newPos);
+  if (!matchUnordered) {
+    const cursorLC = getLineAndColumn(target.value, newPos);
+    fixOrderedListMarkers(target, Math.max(0, cursorLC.line - 1));
+    const restored = getPosFromLineAndColumn(target.value, cursorLC.line, cursorLC.column);
+    target.setSelectionRange(restored, restored);
+  }
   target.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function findPreviousOrderedNumberAtIndent(text, indent) {
-  if (!text) return null;
-  const lines = text.split("\n");
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const m = lines[i].match(/^(\s*)(\d+)\.\s+/);
-    if (!m) continue;
-    if (m[1] !== indent) continue;
-    const n = Number(m[2]);
-    if (!Number.isFinite(n)) continue;
-    return n;
+function handleListTab(textarea, event) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const { column } = getLineAndColumn(value, start);
+  const lineStart = getLineStartIndex(value, start);
+  const lineEnd = getLineEndIndex(value, start);
+  const lineText = value.slice(lineStart, lineEnd);
+
+  const listPrefixMatch = /^\s*([-+*]|[0-9]+[.)]) +(\[[ xX]\] +)?/.exec(lineText);
+  const shouldIndentAsList =
+    Boolean(listPrefixMatch) &&
+    (event.shiftKey || start !== end || column <= (listPrefixMatch?.[0]?.length ?? 0));
+
+  event.preventDefault();
+
+  if (event.shiftKey) {
+    unindentTextArea(textarea, TAB_INDENT);
+  } else if (shouldIndentAsList) {
+    indentTextArea(textarea, TAB_INDENT);
+  } else {
+    insertTextAtSelection(textarea, TAB_INDENT);
   }
-  return null;
+
+  if (ORDERED_LIST_AUTO_RENUMBER) {
+    const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
+    const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
+    fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
+    restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
+  }
+
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function getLineIndent(line) {
-  const match = String(line || "").match(/^(\s*)/);
-  return match ? match[1] : "";
-}
+function handleListBackspace(textarea, event) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  if (start !== end) return;
 
-function isOrderedListItemAtIndent(line, indent) {
-  const m = String(line || "").match(/^(\s*)(\d+)\.\s+/);
-  if (!m) return false;
-  return m[1] === indent;
-}
+  const lineStart = getLineStartIndex(value, start);
+  const lineEnd = getLineEndIndex(value, start);
+  const lineText = value.slice(lineStart, lineEnd);
+  const textBeforeCursor = lineText.slice(0, start - lineStart);
 
-function renumberOrderedListAtIndent(lines, pivotIndex, indent) {
-  if (!indent && indent !== "") return;
-  if (!Array.isArray(lines) || lines.length === 0) return;
-
-  const pivotLine = lines[pivotIndex] ?? "";
-  if (!isOrderedListItemAtIndent(pivotLine, indent)) {
-    // pivotがネスト内にいても、近傍の同階層リストを対象にしたいので探索する
-    let found = -1;
-    for (let i = pivotIndex; i >= 0; i--) {
-      const line = lines[i] ?? "";
-      if (line.trim().length === 0) break;
-      const lineIndent = getLineIndent(line);
-      if (lineIndent.length < indent.length) break;
-      if (lineIndent === indent && isOrderedListItemAtIndent(line, indent)) {
-        found = i;
-        break;
-      }
+  if (/^\s+([-+*]|[0-9]+[.)]) $/.test(textBeforeCursor)) {
+    event.preventDefault();
+    unindentTextArea(textarea, TAB_INDENT);
+    if (ORDERED_LIST_AUTO_RENUMBER) {
+      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
+      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
+      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
+      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
     }
-    for (let i = pivotIndex + 1; found === -1 && i < lines.length; i++) {
-      const line = lines[i] ?? "";
-      if (line.trim().length === 0) break;
-      const lineIndent = getLineIndent(line);
-      if (lineIndent.length < indent.length) break;
-      if (lineIndent === indent && isOrderedListItemAtIndent(line, indent)) {
-        found = i;
-        break;
-      }
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+
+  if (/^([-+*]|[0-9]+[.)]) $/.test(textBeforeCursor)) {
+    event.preventDefault();
+    const replaced = " ".repeat(textBeforeCursor.length);
+    textarea.value =
+      value.slice(0, lineStart) + replaced + value.slice(lineStart + textBeforeCursor.length);
+    textarea.setSelectionRange(start, start);
+    if (ORDERED_LIST_AUTO_RENUMBER) {
+      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
+      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
+      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
+      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
     }
-    if (found === -1) return;
-    pivotIndex = found;
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
   }
 
-  // 上に向かってブロック開始点を探す
-  let start = pivotIndex;
-  while (start > 0) {
-    const prev = lines[start - 1] ?? "";
-    if (prev.trim().length === 0) break;
-    const prevIndent = getLineIndent(prev);
-    if (prevIndent.length < indent.length) break;
-    if (prevIndent === indent && !isOrderedListItemAtIndent(prev, indent)) break;
-    start -= 1;
-  }
-
-  // 下に向かってブロック終端を探す
-  let end = pivotIndex;
-  while (end < lines.length - 1) {
-    const next = lines[end + 1] ?? "";
-    if (next.trim().length === 0) break;
-    const nextIndent = getLineIndent(next);
-    if (nextIndent.length < indent.length) break;
-    if (nextIndent === indent && !isOrderedListItemAtIndent(next, indent)) break;
-    end += 1;
-  }
-
-  let current = 0;
-  for (let i = start; i <= end; i++) {
-    const line = lines[i] ?? "";
-    if (line.trim().length === 0) break;
-    const lineIndent = getLineIndent(line);
-
-    // ネストは飛ばす（同階層の兄弟だけ採番対象）
-    if (lineIndent.length > indent.length) continue;
-
-    // 同じインデントで別種の行が来たら、このリストブロック終了
-    if (lineIndent !== indent) break;
-
-    if (!isOrderedListItemAtIndent(line, indent)) break;
-
-    current += 1;
-    lines[i] = line.replace(/^(\s*)(\d+)(\.\s+)/, `$1${current}$3`);
+  if (/^\s*([-+*]|[0-9]+[.)]) +(\[[ xX]\] )$/.test(textBeforeCursor)) {
+    event.preventDefault();
+    const removeStart = Math.max(lineStart, start - 4);
+    textarea.value = value.slice(0, removeStart) + value.slice(start);
+    const next = removeStart;
+    textarea.setSelectionRange(next, next);
+    if (ORDERED_LIST_AUTO_RENUMBER) {
+      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
+      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
+      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
+      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
+    }
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
   }
 }
 
@@ -417,57 +420,10 @@ function indentTextArea(textarea, indent) {
   const end = textarea.selectionEnd;
 
   if (start === end) {
-    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    const lineEndIndex = value.indexOf("\n", start);
-    const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
-    const currentLine = value.slice(lineStart, lineEnd);
-    const orderedMatch = currentLine.match(/^(\s*)(\d+)\.\s+/);
-    const oldIndent = orderedMatch?.[1] ?? null;
-
+    const lineStart = getLineStartIndex(value, start);
     textarea.value = value.slice(0, lineStart) + indent + value.slice(lineStart);
-
-    let nextPos = start + indent.length;
-    if (orderedMatch) {
-      const existingIndentLen = orderedMatch[1].length;
-      const numberText = orderedMatch[2];
-      const newIndent = indent + orderedMatch[1];
-      const desiredNumber = computeNextOrderedNumberAtIndent(value.slice(0, lineStart), newIndent);
-      const desiredNumberText = String(desiredNumber);
-
-      const numberStart = lineStart + indent.length + existingIndentLen;
-      const numberEnd = numberStart + numberText.length;
-
-      if (desiredNumberText !== numberText) {
-        const updated = textarea.value;
-        textarea.value =
-          updated.slice(0, numberStart) + desiredNumberText + updated.slice(numberEnd);
-
-        const delta = desiredNumberText.length - numberText.length;
-        if (nextPos >= numberEnd) {
-          nextPos += delta;
-        } else if (nextPos > numberStart) {
-          nextPos = numberStart + desiredNumberText.length;
-        }
-      }
-    }
-
-    if (orderedMatch) {
-      const after = textarea.value;
-      const lines = after.split("\n");
-      const lineIndex = countNewlines(after, lineStart);
-      const newIndent = indent + orderedMatch[1];
-
-      renumberOrderedListAtIndent(lines, lineIndex, newIndent);
-      if (oldIndent != null && oldIndent !== newIndent) {
-        renumberOrderedListAtIndent(lines, lineIndex, oldIndent);
-      }
-
-      textarea.value = lines.join("\n");
-    }
-
+    const nextPos = start + indent.length;
     textarea.setSelectionRange(nextPos, nextPos);
-    textarea.focus();
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
     return;
   }
 
@@ -488,8 +444,6 @@ function indentTextArea(textarea, indent) {
 
   textarea.value = value.slice(0, firstLineStart) + nextBlock + value.slice(blockEnd);
   textarea.setSelectionRange(start + addedBeforeStart, end + addedBeforeEnd);
-  textarea.focus();
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function unindentTextArea(textarea, indent) {
@@ -505,57 +459,15 @@ function unindentTextArea(textarea, indent) {
   };
 
   if (start === end) {
-    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    const lineEndIndex = value.indexOf("\n", start);
-    const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+    const lineStart = getLineStartIndex(value, start);
+    const lineEnd = getLineEndIndex(value, start);
     const line = value.slice(lineStart, lineEnd);
-    const originalOrderedMatch = line.match(/^(\s*)(\d+)\.\s+/);
-    const originalIndent = originalOrderedMatch?.[1] ?? null;
     const { line: nextLine, removed } = removePrefix(line);
     if (removed === 0) return;
 
-    const beforeLine = value.slice(0, lineStart);
-    const orderedMatch = nextLine.match(/^(\s*)(\d+)\.\s+/);
-    let patchedLine = nextLine;
-    let delta = 0;
-    let patchedIndent = null;
-
-    if (orderedMatch) {
-      const desiredNumber = computeNextOrderedNumberAtIndent(beforeLine, orderedMatch[1]);
-      const desiredNumberText = String(desiredNumber);
-      if (desiredNumberText !== orderedMatch[2]) {
-        const numberStartInLine = orderedMatch[1].length;
-        const numberEndInLine = numberStartInLine + orderedMatch[2].length;
-        patchedLine =
-          nextLine.slice(0, numberStartInLine) +
-          desiredNumberText +
-          nextLine.slice(numberEndInLine);
-        delta = desiredNumberText.length - orderedMatch[2].length;
-      }
-      patchedIndent = orderedMatch[1];
-    }
-
-    textarea.value = beforeLine + patchedLine + value.slice(lineEnd);
-
-    // Shift+Tab で階層が変わった場合、同じ階層の兄弟を連番補正
-    if (orderedMatch) {
-      const after = textarea.value;
-      const lines = after.split("\n");
-      const lineIndex = countNewlines(after, lineStart);
-      const newIndent = patchedIndent ?? orderedMatch[1];
-
-      renumberOrderedListAtIndent(lines, lineIndex, newIndent);
-      if (originalIndent != null && originalIndent !== newIndent) {
-        renumberOrderedListAtIndent(lines, lineIndex, originalIndent);
-      }
-
-      textarea.value = lines.join("\n");
-    }
-
-    const next = Math.max(lineStart, start - removed + delta);
+    textarea.value = value.slice(0, lineStart) + nextLine + value.slice(lineEnd);
+    const next = Math.max(lineStart, start - removed);
     textarea.setSelectionRange(next, next);
-    textarea.focus();
-    textarea.dispatchEvent(new Event("input", { bubbles: true }));
     return;
   }
 
@@ -579,18 +491,11 @@ function unindentTextArea(textarea, indent) {
 
   textarea.value = value.slice(0, firstLineStart) + nextBlock + value.slice(blockEnd);
   textarea.setSelectionRange(start - removedBeforeStart, end - removedBeforeEnd);
-  textarea.focus();
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function countNewlines(text, upToIndex) {
   const chunk = text.slice(0, Math.max(0, upToIndex));
   return (chunk.match(/\n/g) || []).length;
-}
-
-function computeNextOrderedNumberAtIndent(textBeforeLine, indent) {
-  const prev = findPreviousOrderedNumberAtIndent(textBeforeLine, indent);
-  return Number.isFinite(prev) ? prev + 1 : 1;
 }
 
 function sum(values, fromIndex, toIndex) {
@@ -599,6 +504,183 @@ function sum(values, fromIndex, toIndex) {
     total += values[i] || 0;
   }
   return total;
+}
+
+function buildNextOrderedPrefix(matchOrdered) {
+  const leadingSpace = matchOrdered[1];
+  const previousMarker = matchOrdered[2];
+  const delimiter = matchOrdered[3];
+  const trailingSpace = matchOrdered[4];
+  const checkbox = matchOrdered[5] ? matchOrdered[5].replace(/\[x\]/i, "[ ]") : "";
+
+  const marker =
+    ORDERED_LIST_MARKER_MODE === "one"
+      ? "1"
+      : String(Number(previousMarker) + 1 || 1);
+
+  const textIndent = (previousMarker + delimiter + trailingSpace).length;
+  const adjustedTrailing = " ".repeat(
+    Math.max(1, textIndent - (marker + delimiter).length)
+  );
+  return `${leadingSpace}${marker}${delimiter}${adjustedTrailing}${checkbox}`;
+}
+
+function getLineStartIndex(text, pos) {
+  return text.lastIndexOf("\n", pos - 1) + 1;
+}
+
+function getLineEndIndex(text, pos) {
+  const next = text.indexOf("\n", pos);
+  return next === -1 ? text.length : next;
+}
+
+function getColumnFromPos(text, pos) {
+  const lineStart = getLineStartIndex(text, pos);
+  return pos - lineStart;
+}
+
+function getLineAndColumn(text, pos) {
+  const line = countNewlines(text, pos);
+  return { line, column: getColumnFromPos(text, pos) };
+}
+
+function getPosFromLineAndColumn(text, line, column) {
+  const lines = text.split("\n");
+  const safeLine = Math.max(0, Math.min(line, lines.length - 1));
+  let offset = 0;
+  for (let i = 0; i < safeLine; i++) {
+    offset += lines[i].length + 1;
+  }
+  const safeCol = Math.max(0, Math.min(column, lines[safeLine].length));
+  return offset + safeCol;
+}
+
+function restoreSelectionByLineColumn(textarea, startLC, endLC) {
+  const nextStart = getPosFromLineAndColumn(textarea.value, startLC.line, startLC.column);
+  const nextEnd = getPosFromLineAndColumn(textarea.value, endLC.line, endLC.column);
+  textarea.setSelectionRange(nextStart, nextEnd);
+}
+
+function insertTextAtSelection(textarea, text) {
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  textarea.value = value.slice(0, start) + text + value.slice(end);
+  const next = start + text.length;
+  textarea.setSelectionRange(next, next);
+}
+
+function findNextMarkerLineNumber(lines, line) {
+  let idx = Math.max(0, line);
+  while (idx < lines.length) {
+    const lineText = lines[idx] || "";
+    if (lineText.startsWith("#")) {
+      return -1;
+    }
+    if (/^\s*[0-9]+[.)] +/.test(lineText)) {
+      return idx;
+    }
+    idx++;
+  }
+  return -1;
+}
+
+function lookUpwardForMarker(lines, line, currentIndentation) {
+  let prevLine = line;
+  while (--prevLine >= 0) {
+    const prevLineText = (lines[prevLine] || "").replace(/\t/g, "    ");
+    let matches = null;
+
+    matches = /^(\s*)(([0-9]+)[.)] +)/.exec(prevLineText);
+    if (matches) {
+      const prevLeadingSpace = matches[1];
+      const prevMarker = matches[3];
+      if (currentIndentation < prevLeadingSpace.length) {
+        continue;
+      } else if (
+        currentIndentation >= prevLeadingSpace.length &&
+        currentIndentation <= (prevLeadingSpace + prevMarker).length
+      ) {
+        return Number(prevMarker) + 1;
+      } else if (currentIndentation > (prevLeadingSpace + prevMarker).length) {
+        return 1;
+      }
+      continue;
+    }
+
+    matches = /^(\s*)([-+*] +)/.exec(prevLineText);
+    if (matches) {
+      const prevLeadingSpace = matches[1];
+      if (currentIndentation >= prevLeadingSpace.length) {
+        break;
+      }
+      continue;
+    }
+
+    matches = /^(\s*)\S/.exec(prevLineText);
+    if (matches) {
+      if (matches[1].length < 3) {
+        break;
+      }
+    }
+  }
+  return 1;
+}
+
+function fixOrderedListMarkers(textarea, fromLine = 0) {
+  if (!ORDERED_LIST_AUTO_RENUMBER) return;
+  if (ORDERED_LIST_MARKER_MODE === "one") return;
+
+  const lines = textarea.value.split("\n");
+  const start = findNextMarkerLineNumber(lines, fromLine);
+  if (start < 0) return;
+  fixMarkerIterative(lines, start);
+  textarea.value = lines.join("\n");
+}
+
+function fixMarkerIterative(lines, line) {
+  if (line < 0 || line >= lines.length) return;
+
+  const currentLineText = lines[line] || "";
+  const matches = /^(\s*)([0-9]+)([.)])( +)/.exec(currentLineText);
+  if (!matches) return;
+
+  const leadingSpace = matches[1];
+  const marker = matches[2];
+  const delimiter = matches[3];
+  const trailingSpace = matches[4];
+  const fixedMarker = lookUpwardForMarker(
+    lines,
+    line,
+    leadingSpace.replace(/\t/g, "    ").length
+  );
+
+  const listIndent = marker.length + delimiter.length + trailingSpace.length;
+  let fixedMarkerString = String(fixedMarker);
+
+  if (marker !== fixedMarkerString) {
+    fixedMarkerString +=
+      delimiter +
+      " ".repeat(Math.max(1, listIndent - (fixedMarkerString + delimiter).length));
+    const start = leadingSpace.length;
+    const end = leadingSpace.length + listIndent;
+    lines[line] = currentLineText.slice(0, start) + fixedMarkerString + currentLineText.slice(end);
+  }
+
+  let nextLine = line + 1;
+  while (nextLine < lines.length) {
+    const nextLineText = lines[nextLine] || "";
+    if (/^\s*[0-9]+[.)] +/.test(nextLineText)) {
+      fixMarkerIterative(lines, nextLine);
+      return;
+    }
+
+    const prevLineText = lines[nextLine - 1] || "";
+    if (/^\s*$/.test(prevLineText) && !nextLineText.startsWith("   ") && !nextLineText.startsWith("\t")) {
+      return;
+    }
+    nextLine++;
+  }
 }
 
 function scheduleAutoSave() {
