@@ -27,6 +27,8 @@ let lastEnterWithShift = false;
 const TAB_INDENT = "  ";
 const ORDERED_LIST_MARKER_MODE = "ordered"; // "one" or "ordered"（Markdown All in One互換）
 const ORDERED_LIST_AUTO_RENUMBER = true;
+// リスト継続とみなす最小インデント長（Markdown All in One互換）
+const MIN_LIST_CONTINUATION_INDENT = 3;
 
 export function attachEventListeners() {
   const {
@@ -600,7 +602,7 @@ function lookUpwardForMarker(lines, line, currentIndentation) {
 
     matches = /^(\s*)\S/.exec(prevLineText);
     if (matches) {
-      if (matches[1].length < 3) {
+      if (matches[1].length < MIN_LIST_CONTINUATION_INDENT) {
         break;
       }
     }

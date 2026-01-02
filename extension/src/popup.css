@@ -452,6 +452,8 @@ body {
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
   font-size: 14px;
   line-height: 1.5;
+  tab-size: 4;
+  -moz-tab-size: 4;
   background: rgba(248, 250, 252, 0.9);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
