@@ -347,9 +347,35 @@ function indentTextArea(textarea, indent) {
 
   if (start === end) {
     const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+    const lineEndIndex = value.indexOf("\n", start);
+    const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+    const currentLine = value.slice(lineStart, lineEnd);
+    const orderedMatch = currentLine.match(/^(\s*)(\d+)\.\s+/);
+
     textarea.value = value.slice(0, lineStart) + indent + value.slice(lineStart);
-    const next = start + indent.length;
-    textarea.setSelectionRange(next, next);
+
+    let nextPos = start + indent.length;
+    if (orderedMatch) {
+      const existingIndentLen = orderedMatch[1].length;
+      const numberText = orderedMatch[2];
+      const numberStart = lineStart + indent.length + existingIndentLen;
+      const numberEnd = numberStart + numberText.length;
+
+      if (numberText !== "1") {
+        const updated = textarea.value;
+        textarea.value =
+          updated.slice(0, numberStart) + "1" + updated.slice(numberEnd);
+
+        const delta = 1 - numberText.length;
+        if (nextPos >= numberEnd) {
+          nextPos += delta;
+        } else if (nextPos > numberStart) {
+          nextPos = numberStart + 1;
+        }
+      }
+    }
+
+    textarea.setSelectionRange(nextPos, nextPos);
     textarea.focus();
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     return;
