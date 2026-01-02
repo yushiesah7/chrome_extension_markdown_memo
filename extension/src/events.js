@@ -327,6 +327,90 @@ function findPreviousOrderedNumberAtIndent(text, indent) {
   return null;
 }
 
+function getLineIndent(line) {
+  const match = String(line || "").match(/^(\s*)/);
+  return match ? match[1] : "";
+}
+
+function isOrderedListItemAtIndent(line, indent) {
+  const m = String(line || "").match(/^(\s*)(\d+)\.\s+/);
+  if (!m) return false;
+  return m[1] === indent;
+}
+
+function renumberOrderedListAtIndent(lines, pivotIndex, indent) {
+  if (!indent && indent !== "") return;
+  if (!Array.isArray(lines) || lines.length === 0) return;
+
+  const pivotLine = lines[pivotIndex] ?? "";
+  if (!isOrderedListItemAtIndent(pivotLine, indent)) {
+    // pivotがネスト内にいても、近傍の同階層リストを対象にしたいので探索する
+    let found = -1;
+    for (let i = pivotIndex; i >= 0; i--) {
+      const line = lines[i] ?? "";
+      if (line.trim().length === 0) break;
+      const lineIndent = getLineIndent(line);
+      if (lineIndent.length < indent.length) break;
+      if (lineIndent === indent && isOrderedListItemAtIndent(line, indent)) {
+        found = i;
+        break;
+      }
+    }
+    for (let i = pivotIndex + 1; found === -1 && i < lines.length; i++) {
+      const line = lines[i] ?? "";
+      if (line.trim().length === 0) break;
+      const lineIndent = getLineIndent(line);
+      if (lineIndent.length < indent.length) break;
+      if (lineIndent === indent && isOrderedListItemAtIndent(line, indent)) {
+        found = i;
+        break;
+      }
+    }
+    if (found === -1) return;
+    pivotIndex = found;
+  }
+
+  // 上に向かってブロック開始点を探す
+  let start = pivotIndex;
+  while (start > 0) {
+    const prev = lines[start - 1] ?? "";
+    if (prev.trim().length === 0) break;
+    const prevIndent = getLineIndent(prev);
+    if (prevIndent.length < indent.length) break;
+    if (prevIndent === indent && !isOrderedListItemAtIndent(prev, indent)) break;
+    start -= 1;
+  }
+
+  // 下に向かってブロック終端を探す
+  let end = pivotIndex;
+  while (end < lines.length - 1) {
+    const next = lines[end + 1] ?? "";
+    if (next.trim().length === 0) break;
+    const nextIndent = getLineIndent(next);
+    if (nextIndent.length < indent.length) break;
+    if (nextIndent === indent && !isOrderedListItemAtIndent(next, indent)) break;
+    end += 1;
+  }
+
+  let current = 0;
+  for (let i = start; i <= end; i++) {
+    const line = lines[i] ?? "";
+    if (line.trim().length === 0) break;
+    const lineIndent = getLineIndent(line);
+
+    // ネストは飛ばす（同階層の兄弟だけ採番対象）
+    if (lineIndent.length > indent.length) continue;
+
+    // 同じインデントで別種の行が来たら、このリストブロック終了
+    if (lineIndent !== indent) break;
+
+    if (!isOrderedListItemAtIndent(line, indent)) break;
+
+    current += 1;
+    lines[i] = line.replace(/^(\s*)(\d+)(\.\s+)/, `$1${current}$3`);
+  }
+}
+
 function indentTextArea(textarea, indent) {
   const value = textarea.value;
   const start = textarea.selectionStart;
@@ -339,9 +423,6 @@ function indentTextArea(textarea, indent) {
     const currentLine = value.slice(lineStart, lineEnd);
     const orderedMatch = currentLine.match(/^(\s*)(\d+)\.\s+/);
     const oldIndent = orderedMatch?.[1] ?? null;
-    const prevNumberAtOldIndent = oldIndent
-      ? findPreviousOrderedNumberAtIndent(value.slice(0, lineStart), oldIndent)
-      : null;
 
     textarea.value = value.slice(0, lineStart) + indent + value.slice(lineStart);
 
@@ -374,14 +455,11 @@ function indentTextArea(textarea, indent) {
       const after = textarea.value;
       const lines = after.split("\n");
       const lineIndex = countNewlines(after, lineStart);
+      const newIndent = indent + orderedMatch[1];
 
-      // 1) 移動後の階層で「自分以降」を連番補正
-      renumberFollowingOrderedSiblings(lines, lineIndex);
-
-      // 2) 元の階層からは項目が抜けるため、「次の兄弟」以降を詰める
-      if (oldIndent != null) {
-        const startNumber = Number.isFinite(prevNumberAtOldIndent) ? prevNumberAtOldIndent : 0;
-        renumberOrderedSiblingsAfterRemoval(lines, lineIndex + 1, oldIndent, startNumber);
+      renumberOrderedListAtIndent(lines, lineIndex, newIndent);
+      if (oldIndent != null && oldIndent !== newIndent) {
+        renumberOrderedListAtIndent(lines, lineIndex, oldIndent);
       }
 
       textarea.value = lines.join("\n");
@@ -433,9 +511,6 @@ function unindentTextArea(textarea, indent) {
     const line = value.slice(lineStart, lineEnd);
     const originalOrderedMatch = line.match(/^(\s*)(\d+)\.\s+/);
     const originalIndent = originalOrderedMatch?.[1] ?? null;
-    const prevNumberAtOriginalIndent = originalIndent
-      ? findPreviousOrderedNumberAtIndent(value.slice(0, lineStart), originalIndent)
-      : null;
     const { line: nextLine, removed } = removePrefix(line);
     if (removed === 0) return;
 
@@ -443,7 +518,6 @@ function unindentTextArea(textarea, indent) {
     const orderedMatch = nextLine.match(/^(\s*)(\d+)\.\s+/);
     let patchedLine = nextLine;
     let delta = 0;
-    let patchedNumber = null;
     let patchedIndent = null;
 
     if (orderedMatch) {
@@ -458,7 +532,6 @@ function unindentTextArea(textarea, indent) {
           nextLine.slice(numberEndInLine);
         delta = desiredNumberText.length - orderedMatch[2].length;
       }
-      patchedNumber = desiredNumber;
       patchedIndent = orderedMatch[1];
     }
 
@@ -469,16 +542,11 @@ function unindentTextArea(textarea, indent) {
       const after = textarea.value;
       const lines = after.split("\n");
       const lineIndex = countNewlines(after, lineStart);
+      const newIndent = patchedIndent ?? orderedMatch[1];
 
-      // 1) 移動後の階層で「自分以降」を連番補正
-      renumberFollowingOrderedSiblings(lines, lineIndex);
-
-      // 2) 元の階層からは項目が抜けるため、「次の兄弟」以降を詰める
-      if (originalIndent != null) {
-        const startNumber = Number.isFinite(prevNumberAtOriginalIndent)
-          ? prevNumberAtOriginalIndent
-          : 0;
-        renumberOrderedSiblingsAfterRemoval(lines, lineIndex + 1, originalIndent, startNumber);
+      renumberOrderedListAtIndent(lines, lineIndex, newIndent);
+      if (originalIndent != null && originalIndent !== newIndent) {
+        renumberOrderedListAtIndent(lines, lineIndex, originalIndent);
       }
 
       textarea.value = lines.join("\n");
@@ -523,81 +591,6 @@ function countNewlines(text, upToIndex) {
 function computeNextOrderedNumberAtIndent(textBeforeLine, indent) {
   const prev = findPreviousOrderedNumberAtIndent(textBeforeLine, indent);
   return Number.isFinite(prev) ? prev + 1 : 1;
-}
-
-function renumberFollowingOrderedSiblings(lines, startIndex) {
-  const startLine = lines[startIndex];
-  const startMatch = startLine?.match(/^(\s*)(\d+)\.\s+/);
-  if (!startMatch) return;
-
-  const baseIndent = startMatch[1];
-  let current = Number(startMatch[2]);
-  if (!Number.isFinite(current)) return;
-
-  for (let i = startIndex + 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.trim().length === 0) break;
-
-    const indentMatch = line.match(/^(\s*)/);
-    const lineIndent = indentMatch ? indentMatch[1] : "";
-
-    // ネスト内はスキップして継続
-    if (lineIndent.startsWith(baseIndent) && lineIndent.length > baseIndent.length) {
-      continue;
-    }
-
-    // 上の階層に戻った or 全く別のインデント体系に入ったら終了
-    if (!(lineIndent === baseIndent)) {
-      if (baseIndent.startsWith(lineIndent) && lineIndent.length < baseIndent.length) {
-        break;
-      }
-      break;
-    }
-
-    const ordered = line.match(/^(\s*)(\d+)(\.\s+)/);
-    if (ordered) {
-      current += 1;
-      lines[i] = line.replace(/^(\s*)(\d+)(\.\s+)/, `$1${current}$3`);
-      continue;
-    }
-
-    // 同階層で別のリスト/文が来たら終了
-    break;
-  }
-}
-
-function renumberOrderedSiblingsAfterRemoval(lines, fromIndex, baseIndent, startNumber) {
-  let current = startNumber;
-
-  for (let i = fromIndex; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.trim().length === 0) break;
-
-    const indentMatch = line.match(/^(\s*)/);
-    const lineIndent = indentMatch ? indentMatch[1] : "";
-
-    // ネスト内はスキップして継続
-    if (lineIndent.startsWith(baseIndent) && lineIndent.length > baseIndent.length) {
-      continue;
-    }
-
-    // 上の階層に戻った or 全く別のインデント体系に入ったら終了
-    if (!(lineIndent === baseIndent)) {
-      if (baseIndent.startsWith(lineIndent) && lineIndent.length < baseIndent.length) {
-        break;
-      }
-      break;
-    }
-
-    const ordered = line.match(/^(\s*)(\d+)(\.\s+)/);
-    if (ordered) {
-      current += 1;
-      lines[i] = line.replace(/^(\s*)(\d+)(\.\s+)/, `$1${current}$3`);
-      continue;
-    }
-
-    break;
-  }
 }
 
 function sum(values, fromIndex, toIndex) {
