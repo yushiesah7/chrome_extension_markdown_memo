@@ -35,9 +35,52 @@ export function renderNoteList({ notes, sortOrder, sortDirection = "desc", activ
   }
 }
 
-export function updateEditor(note) {
-  const { noteTitleEl, noteBodyEl, deleteBtn } = elements;
+export function updateEditor(note, notesCount = 0) {
+  const {
+    noteTitleEl,
+    noteBodyEl,
+    deleteBtn,
+    copyAllEl,
+    modeEditEl,
+    modePreviewEl,
+    editorContentEl,
+    emptyStateEl,
+  } = elements;
   const hasActive = Boolean(note);
+  const isEmpty = notesCount === 0;
+
+  if (editorContentEl && emptyStateEl) {
+    editorContentEl.hidden = isEmpty;
+    emptyStateEl.hidden = !isEmpty;
+  } else if (emptyStateEl) {
+    emptyStateEl.hidden = !isEmpty;
+  }
+
+  if (isEmpty) {
+    if (noteTitleEl) {
+      noteTitleEl.disabled = true;
+      noteTitleEl.value = "";
+    }
+    if (noteBodyEl) {
+      noteBodyEl.disabled = true;
+      noteBodyEl.value = "";
+    }
+    if (deleteBtn) {
+      deleteBtn.disabled = true;
+    }
+    if (copyAllEl) {
+      copyAllEl.disabled = true;
+    }
+    if (modeEditEl) {
+      modeEditEl.disabled = true;
+    }
+    if (modePreviewEl) {
+      modePreviewEl.disabled = true;
+    }
+    updateActiveNoteMeta(null);
+    setStatus("idle", "メモがありません");
+    return;
+  }
 
   if (noteTitleEl) {
     noteTitleEl.disabled = !hasActive;
@@ -59,6 +102,18 @@ export function updateEditor(note) {
 
   if (deleteBtn) {
     deleteBtn.disabled = !hasActive;
+  }
+
+  if (copyAllEl) {
+    copyAllEl.disabled = !hasActive;
+  }
+
+  if (modeEditEl) {
+    modeEditEl.disabled = !hasActive;
+  }
+
+  if (modePreviewEl) {
+    modePreviewEl.disabled = !hasActive;
   }
 
   if (!hasActive) {

@@ -18,6 +18,10 @@
   gap: 14px;
 }
 
+.editor__content {
+  gap: 14px;
+}
+
 .editor__body {
   display: flex;
   flex: 1;

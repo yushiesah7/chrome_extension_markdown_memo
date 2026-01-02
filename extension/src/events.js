@@ -28,6 +28,7 @@ let lastEnterWithShift = false;
 export function attachEventListeners() {
   const {
     createBtn,
+    emptyCreateBtnEl,
     deleteBtn,
     noteTitleEl,
     noteBodyEl,
@@ -35,10 +36,12 @@ export function attachEventListeners() {
     sortToggleEl,
     previewButtonEl,
     openDocsEl,
+    emptyOpenDocsEl,
   } = elements;
 
   // 新規メモを作成
   createBtn.addEventListener("click", handleCreateNote);
+  emptyCreateBtnEl?.addEventListener("click", handleCreateNote);
   // 現在のメモを削除
   deleteBtn.addEventListener("click", () => handleDeleteNote());
   // タイトル/本文の編集
@@ -60,6 +63,7 @@ export function attachEventListeners() {
 
   // 仕様書を開く
   openDocsEl?.addEventListener("click", handleOpenDocs);
+  emptyOpenDocsEl?.addEventListener("click", handleOpenDocs);
 
   if (!document.body.dataset.previewTab && previewButtonEl) {
     // タブ（編集/プレビュー）を開く
@@ -68,13 +72,14 @@ export function attachEventListeners() {
 }
 
 export function renderApp() {
+  const notes = getNotes();
   renderNoteList({
-    notes: getNotes(),
+    notes,
     sortOrder: getSortOrder(),
     sortDirection: getSortDirection(),
     activeNoteId: getActiveNoteId(),
   });
-  updateEditor(getActiveNote());
+  updateEditor(getActiveNote(), notes.length);
 }
 
 function handleCreateNote() {
