@@ -193,9 +193,17 @@ function handleSortToggle() {
 }
 
 function handlePreviewOpen() {
-  // タブ側は拡張の保存領域から直接ロードするため、payload受け渡しは不要。
-  const url = chrome.runtime.getURL("src/preview.html");
-  openInNewTab(url, "プレビューを開けませんでした");
+  // タブ側は拡張の保存領域から直接ロードするため、最新状態を先に保存してから開く。
+  (async () => {
+    try {
+      await persistNow();
+    } catch (error) {
+      console.error("タブを開く前の保存に失敗しました", error);
+      setStatus("idle", "保存に失敗しました");
+    }
+    const url = chrome.runtime.getURL("src/preview.html");
+    openInNewTab(url, "プレビューを開けませんでした");
+  })();
 }
 
 function handleOpenDocs() {
@@ -690,4 +698,28 @@ function scheduleAutoSave() {
       setStatus("idle", "編集中");
     }, 1500);
   }, AUTO_SAVE_DELAY);
+}
+
+async function persistNow() {
+  // タブを開く等の「即時保存」が必要な場面用（遅延保存をキャンセルして保存する）
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+  }
+  if (statusResetTimeout) {
+    clearTimeout(statusResetTimeout);
+    statusResetTimeout = null;
+  }
+
+  const { noteTitleEl, noteBodyEl } = elements;
+  if (noteTitleEl && noteBodyEl) {
+    updateActiveNote({ title: noteTitleEl.value, body: noteBodyEl.value });
+  }
+
+  setStatus("saving", "保存中…");
+  await persistState();
+  setStatus("saved", "保存しました");
+  statusResetTimeout = setTimeout(() => {
+    setStatus("idle", "編集中");
+  }, 1500);
 }

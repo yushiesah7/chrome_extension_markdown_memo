@@ -28,10 +28,24 @@ export function renderMarkdown(text) {
       .replace(/>/g, "&gt;");
 
   const formatInline = (str) => {
-    let escaped = escapeHtml(str);
-    escaped = escaped.replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`);
+    const codeSpans = [];
+    const placeholderPrefix = "@@INLINE_CODE_SPAN_";
+    const placeholderSuffix = "@@";
+
+    const processed = String(str || "").replace(/`([^`]+)`/g, (_, code) => {
+      const idx = codeSpans.length;
+      codeSpans.push(String(code ?? ""));
+      return `${placeholderPrefix}${idx}${placeholderSuffix}`;
+    });
+
+    let escaped = escapeHtml(processed);
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     escaped = escaped.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+    for (let i = 0; i < codeSpans.length; i++) {
+      const token = `${placeholderPrefix}${i}${placeholderSuffix}`;
+      escaped = escaped.replaceAll(token, `<code>${escapeHtml(codeSpans[i])}</code>`);
+    }
     return escaped;
   };
 
