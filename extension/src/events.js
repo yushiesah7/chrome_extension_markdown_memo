@@ -300,7 +300,7 @@ function handleEditorBeforeInput(event) {
   const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
   const prefix = matchUnordered
     ? `${indent}${matchUnordered[2]} `
-    : `${indent}${Number(matchOrdered[2]) + 1}. `;
+    : `${indent}${matchOrdered[2]}. `;
 
   const isLineOnlyPrefix = matchUnordered
     ? currentLine.trim() === `${matchUnordered[2]}`
