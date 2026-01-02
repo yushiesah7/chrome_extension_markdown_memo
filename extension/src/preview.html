@@ -60,51 +60,72 @@
       </aside>
 
       <main class="editor" aria-live="polite">
-        <button id="previewButton" type="button" hidden aria-hidden="true"></button>
-        <div class="editor__header">
-          <div class="editor__title-wrapper">
-            <input class="editor__title-input" id="noteTitle" type="text" aria-label="メモタイトル" placeholder="タイトル" />
-            <span class="editor__meta" id="noteMeta"></span>
-          </div>
-          <div class="editor__actions">
-            <div class="segmented">
-              <button class="segmented__button" id="modeEdit" aria-pressed="true">編集</button>
-              <button class="segmented__button" id="modePreview" aria-pressed="false">プレビュー</button>
-            </div>
-            <button class="copy-button" id="copyAll">全文コピー</button>
-            <button class="icon-button" id="deleteNote" title="メモを削除" aria-label="メモを削除">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-                <path d="M10 11v6"></path>
-                <path d="M14 11v6"></path>
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+        <section class="empty-state" id="emptyState" hidden>
+          <div class="empty-state__card" role="status" aria-live="polite">
+            <div class="empty-state__icon" aria-hidden="true">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="8" y1="13" x2="16" y2="13"></line>
+                <line x1="8" y1="17" x2="14" y2="17"></line>
               </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="editor__body">
-          <section class="editor__panel editor__panel--edit" id="editPanel">
-            <div class="md-toolbar" id="mdToolbar" role="toolbar" aria-label="Markdown挿入">
-              <button class="md-toolbar__button" id="mdH1" type="button" aria-label="見出し1を挿入">H1</button>
-              <button class="md-toolbar__button" id="mdH2" type="button" aria-label="見出し2を挿入">H2</button>
-              <button class="md-toolbar__button" id="mdBullet" type="button" aria-label="箇条書きを挿入">-</button>
-              <button class="md-toolbar__button" id="mdNumbered" type="button" aria-label="番号リストを挿入">1.</button>
-              <button class="md-toolbar__button" id="mdTask" type="button" aria-label="チェックリストを挿入">[ ]</button>
-              <button class="md-toolbar__button" id="mdCode" type="button" aria-label="コードブロックを挿入">```</button>
-              <button class="md-toolbar__button" id="mdMermaid" type="button" aria-label="Mermaidブロックを挿入">Mermaid</button>
             </div>
-            <textarea class="editor__textarea" id="noteBody" aria-label="メモ本文" placeholder="メモ本文を入力してください"></textarea>
-          </section>
-          <section class="editor__panel editor__panel--preview" id="previewPanel" hidden>
-            <div class="preview-container" id="content"></div>
-          </section>
-        </div>
+            <h2 class="empty-state__title">まだメモがありません</h2>
+            <p class="empty-state__text">「＋」または下のボタンから最初のメモを作成できます。</p>
+            <div class="empty-state__actions">
+              <button id="emptyCreateNote" class="pill-button" type="button">新しいメモを作成</button>
+              <button id="emptyOpenDocs" class="empty-state__secondary" type="button">仕様書を見る</button>
+            </div>
+          </div>
+        </section>
 
-        <div class="editor__status" aria-live="polite">
-          <span class="status-indicator" aria-hidden="true"></span>
-          <span class="editor__status-text" id="statusText">待機中</span>
+        <div class="editor__content" id="editorContent">
+          <button id="previewButton" type="button" hidden aria-hidden="true"></button>
+          <div class="editor__header">
+            <div class="editor__title-wrapper">
+              <input class="editor__title-input" id="noteTitle" type="text" aria-label="メモタイトル" placeholder="タイトル" />
+              <span class="editor__meta" id="noteMeta"></span>
+            </div>
+            <div class="editor__actions">
+              <div class="segmented">
+                <button class="segmented__button" id="modeEdit" aria-pressed="true">編集</button>
+                <button class="segmented__button" id="modePreview" aria-pressed="false">プレビュー</button>
+              </div>
+              <button class="copy-button" id="copyAll">全文コピー</button>
+              <button class="icon-button" id="deleteNote" title="メモを削除" aria-label="メモを削除">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  <path d="M10 11v6"></path>
+                  <path d="M14 11v6"></path>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="editor__body">
+            <section class="editor__panel editor__panel--edit" id="editPanel">
+              <div class="md-toolbar" id="mdToolbar" role="toolbar" aria-label="Markdown挿入">
+                <button class="md-toolbar__button" id="mdH1" type="button" aria-label="見出し1を挿入">H1</button>
+                <button class="md-toolbar__button" id="mdH2" type="button" aria-label="見出し2を挿入">H2</button>
+                <button class="md-toolbar__button" id="mdBullet" type="button" aria-label="箇条書きを挿入">-</button>
+                <button class="md-toolbar__button" id="mdNumbered" type="button" aria-label="番号リストを挿入">1.</button>
+                <button class="md-toolbar__button" id="mdTask" type="button" aria-label="チェックリストを挿入">[ ]</button>
+                <button class="md-toolbar__button" id="mdCode" type="button" aria-label="コードブロックを挿入">```</button>
+                <button class="md-toolbar__button" id="mdMermaid" type="button" aria-label="Mermaidブロックを挿入">Mermaid</button>
+              </div>
+              <textarea class="editor__textarea" id="noteBody" aria-label="メモ本文" placeholder="メモ本文を入力してください"></textarea>
+            </section>
+            <section class="editor__panel editor__panel--preview" id="previewPanel" hidden>
+              <div class="preview-container" id="content"></div>
+            </section>
+          </div>
+
+          <div class="editor__status" aria-live="polite">
+            <span class="status-indicator" aria-hidden="true"></span>
+            <span class="editor__status-text" id="statusText">待機中</span>
+          </div>
         </div>
       </main>
     </div>

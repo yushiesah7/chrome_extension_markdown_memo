@@ -56,55 +56,76 @@
         <ul id="noteList" class="note-list" aria-label="メモ一覧"></ul>
       </aside>
       <main class="editor" aria-live="polite">
-        <div class="editor__header">
-          <div class="editor__title-wrapper">
-            <input
-              id="noteTitle"
-              class="editor__title-input"
-              type="text"
-              placeholder="タイトル"
-              aria-label="メモタイトル"
-            />
-            <span id="noteMeta" class="editor__meta">メモを選択してください</span>
-          </div>
-          <div class="editor__actions">
-            <button class="button--ghost" id="previewButton" type="button" aria-label="タブで編集・プレビューを開く">
-              タブを開く
-            </button>
-            <button
-              id="deleteNote"
-              class="icon-button"
-              title="メモを削除"
-              aria-label="メモを削除"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        <section class="empty-state" id="emptyState" hidden>
+          <div class="empty-state__card" role="status" aria-live="polite">
+            <div class="empty-state__icon" aria-hidden="true">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="8" y1="13" x2="16" y2="13"></line>
+                <line x1="8" y1="17" x2="14" y2="17"></line>
               </svg>
-            </button>
+            </div>
+            <h2 class="empty-state__title">まだメモがありません</h2>
+            <p class="empty-state__text">「＋」または下のボタンから最初のメモを作成できます。</p>
+            <div class="empty-state__actions">
+              <button id="emptyCreateNote" class="pill-button" type="button">新しいメモを作成</button>
+              <button id="emptyOpenDocs" class="empty-state__secondary" type="button">仕様書を見る</button>
+            </div>
           </div>
-        </div>
-        <textarea
-          id="noteBody"
-          class="editor__textarea"
-          aria-label="メモ本文"
-        ></textarea>
-        <div class="editor__status" id="editorStatus" aria-live="polite">
-          <span class="status-indicator status-indicator--idle" aria-hidden="true"></span>
-          <span class="editor__status-text">メモを選択してください</span>
+        </section>
+
+        <div class="editor__content" id="editorContent">
+          <div class="editor__header">
+            <div class="editor__title-wrapper">
+              <input
+                id="noteTitle"
+                class="editor__title-input"
+                type="text"
+                placeholder="タイトル"
+                aria-label="メモタイトル"
+              />
+              <span id="noteMeta" class="editor__meta">メモを選択してください</span>
+            </div>
+            <div class="editor__actions">
+              <button class="button--ghost" id="previewButton" type="button" aria-label="タブで編集・プレビューを開く">
+                タブを開く
+              </button>
+              <button
+                id="deleteNote"
+                class="icon-button"
+                title="メモを削除"
+                aria-label="メモを削除"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="noteBody"
+            class="editor__textarea"
+            aria-label="メモ本文"
+          ></textarea>
+          <div class="editor__status" id="editorStatus" aria-live="polite">
+            <span class="status-indicator status-indicator--idle" aria-hidden="true"></span>
+            <span class="editor__status-text">メモを選択してください</span>
+          </div>
         </div>
       </main>
     </div>
