@@ -300,7 +300,7 @@ function handleEditorBeforeInput(event) {
   const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
   const prefix = matchUnordered
     ? `${indent}${matchUnordered[2]} `
-    : `${indent}${matchOrdered[2]}. `;
+    : buildNextOrderedPrefix(before.slice(0, lineStart), matchOrdered[1], matchOrdered[2]);
 
   const isLineOnlyPrefix = matchUnordered
     ? currentLine.trim() === `${matchUnordered[2]}`
@@ -311,6 +311,33 @@ function handleEditorBeforeInput(event) {
   target.value = before + insert + after;
   target.setSelectionRange(newPos, newPos);
   target.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function buildNextOrderedPrefix(textBeforeCurrentLine, indent, currentNumberText) {
+  const currentNumber = Number(currentNumberText);
+  if (!Number.isFinite(currentNumber)) {
+    return `${indent}${currentNumberText}. `;
+  }
+
+  const prevNumber = findPreviousOrderedNumberAtIndent(textBeforeCurrentLine, indent);
+  const expectedCurrent = Number.isFinite(prevNumber) ? prevNumber + 1 : currentNumber;
+  const effectiveCurrent = expectedCurrent === currentNumber ? currentNumber : expectedCurrent;
+  const nextNumber = effectiveCurrent + 1;
+  return `${indent}${nextNumber}. `;
+}
+
+function findPreviousOrderedNumberAtIndent(text, indent) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = lines[i].match(/^(\s*)(\d+)\.\s+/);
+    if (!m) continue;
+    if (m[1] !== indent) continue;
+    const n = Number(m[2]);
+    if (!Number.isFinite(n)) continue;
+    return n;
+  }
+  return null;
 }
 
 function indentTextArea(textarea, indent) {
