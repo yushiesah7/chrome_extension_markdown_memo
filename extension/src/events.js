@@ -302,26 +302,25 @@ function handleEditorBeforeInput(event) {
   const indent = matchUnordered ? matchUnordered[1] : matchOrdered[1];
   const prefix = matchUnordered ? `${indent}${matchUnordered[2]} ` : buildNextOrderedPrefix(matchOrdered);
 
-  const isLineOnlyPrefix = (() => {
-    if (matchUnordered) {
-      const rest = currentLine.slice(matchUnordered[0].length);
-      return rest.trim().length === 0;
-    }
-    const rest = currentLine.slice(matchOrdered[0].length);
-    return rest.trim().length === 0;
-  })();
+  const isLineOnlyPrefix = isLineOnlyListPrefix(
+    currentLine,
+    matchUnordered || matchOrdered
+  );
 
   const insert = isLineOnlyPrefix ? "\n" : `\n${prefix}`;
   const newPos = before.length + insert.length;
   target.value = before + insert + after;
   target.setSelectionRange(newPos, newPos);
   if (!matchUnordered) {
-    const cursorLC = getLineAndColumn(target.value, newPos);
-    fixOrderedListMarkers(target, Math.max(0, cursorLC.line - 1));
-    const restored = getPosFromLineAndColumn(target.value, cursorLC.line, cursorLC.column);
-    target.setSelectionRange(restored, restored);
+    fixMarkersPreservingSelection(target, 1);
   }
   target.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function isLineOnlyListPrefix(currentLine, match) {
+  if (!match) return false;
+  const rest = currentLine.slice(match[0].length);
+  return rest.trim().length === 0;
 }
 
 function handleListTab(textarea, event) {
@@ -348,12 +347,7 @@ function handleListTab(textarea, event) {
     insertTextAtSelection(textarea, TAB_INDENT);
   }
 
-  if (ORDERED_LIST_AUTO_RENUMBER) {
-    const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
-    const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
-    fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
-    restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
-  }
+  fixMarkersPreservingSelection(textarea, 1);
 
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -372,12 +366,7 @@ function handleListBackspace(textarea, event) {
   if (/^\s+([-+*]|[0-9]+[.)]) $/.test(textBeforeCursor)) {
     event.preventDefault();
     unindentTextArea(textarea, TAB_INDENT);
-    if (ORDERED_LIST_AUTO_RENUMBER) {
-      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
-      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
-      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
-      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
-    }
+    fixMarkersPreservingSelection(textarea, 1);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     return;
   }
@@ -388,28 +377,20 @@ function handleListBackspace(textarea, event) {
     textarea.value =
       value.slice(0, lineStart) + replaced + value.slice(lineStart + textBeforeCursor.length);
     textarea.setSelectionRange(start, start);
-    if (ORDERED_LIST_AUTO_RENUMBER) {
-      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
-      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
-      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
-      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
-    }
+    fixMarkersPreservingSelection(textarea, 1);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
     return;
   }
 
-  if (/^\s*([-+*]|[0-9]+[.)]) +(\[[ xX]\] )$/.test(textBeforeCursor)) {
+  const checkboxMatch = /^\s*([-+*]|[0-9]+[.)]) +(\[[ xX]\] )$/.exec(textBeforeCursor);
+  if (checkboxMatch) {
     event.preventDefault();
-    const removeStart = Math.max(lineStart, start - 4);
+    const checkboxLen = checkboxMatch[2].length;
+    const removeStart = Math.max(lineStart, start - checkboxLen);
     textarea.value = value.slice(0, removeStart) + value.slice(start);
     const next = removeStart;
     textarea.setSelectionRange(next, next);
-    if (ORDERED_LIST_AUTO_RENUMBER) {
-      const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
-      const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
-      fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - 1));
-      restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
-    }
+    fixMarkersPreservingSelection(textarea, 1);
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
   }
 }
@@ -638,6 +619,14 @@ function fixOrderedListMarkers(textarea, fromLine = 0) {
   textarea.value = lines.join("\n");
 }
 
+function fixMarkersPreservingSelection(textarea, fromLineOffset = 1) {
+  if (!ORDERED_LIST_AUTO_RENUMBER) return;
+  const selectionStart = { ...getLineAndColumn(textarea.value, textarea.selectionStart) };
+  const selectionEnd = { ...getLineAndColumn(textarea.value, textarea.selectionEnd) };
+  fixOrderedListMarkers(textarea, Math.max(0, selectionStart.line - fromLineOffset));
+  restoreSelectionByLineColumn(textarea, selectionStart, selectionEnd);
+}
+
 function fixMarkerIterative(lines, line) {
   if (line < 0 || line >= lines.length) return;
 
@@ -676,7 +665,7 @@ function fixMarkerIterative(lines, line) {
     }
 
     const prevLineText = lines[nextLine - 1] || "";
-    if (/^\s*$/.test(prevLineText) && !nextLineText.startsWith("   ") && !nextLineText.startsWith("\t")) {
+    if (/^\s*$/.test(prevLineText) && !nextLineText.startsWith(TAB_INDENT) && !nextLineText.startsWith("\t")) {
       return;
     }
     nextLine++;
