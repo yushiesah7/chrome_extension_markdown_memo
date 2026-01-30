@@ -1,5 +1,5 @@
 import { ensureElementsExist } from "./dom.js";
-import { initializeTheme } from "./theme.js";
+import { initializeTheme, createThemeSelectorUI } from "./theme.js";
 import { initializeState } from "./state.js";
 import { attachEventListeners, renderApp } from "./events.js";
 import { setStatus } from "./render.js";
@@ -12,7 +12,14 @@ async function init() {
     return;
   }
 
-  initializeTheme();
+  await initializeTheme();
+
+  // テーマセレクターUIを追加
+  const themeSelectorContainer = document.getElementById("themeSelector");
+  if (themeSelectorContainer) {
+    themeSelectorContainer.appendChild(createThemeSelectorUI());
+  }
+
   attachEventListeners();
 
   try {

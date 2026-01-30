@@ -1,5 +1,5 @@
 import { ensureElementsExist, elements } from "./dom.js";
-import { initializeTheme } from "./theme.js";
+import { initializeTheme, createThemeSelectorUI } from "./theme.js";
 import { initializeState, getActiveNote } from "./state.js";
 import { attachEventListeners, renderApp } from "./events.js";
 import { setStatus } from "./render.js";
@@ -17,8 +17,15 @@ async function init() {
     return;
   }
 
-  // テーマ（ダーク/ライト）を反映
-  initializeTheme();
+  // テーマを初期化（ストレージから読み込み）
+  await initializeTheme();
+
+  // テーマセレクターUIを追加
+  const themeSelectorContainer = document.getElementById("themeSelector");
+  if (themeSelectorContainer) {
+    themeSelectorContainer.appendChild(createThemeSelectorUI());
+  }
+
   // 既存のイベント一式（作成/削除/並び替え/編集）を使い回す
   attachEventListeners();
 
