@@ -4,18 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>プレビュー | Mermaid Markdown Memo</title>
+    <link rel="stylesheet" href="themes.css" />
     <link rel="stylesheet" href="popup.css" />
     <link rel="stylesheet" href="preview.css" />
   </head>
   <body>
-    <div class="app" data-theme="dark">
-      <aside class="sidebar" data-theme="dark">
+    <div class="app">
+      <aside class="sidebar">
         <header class="sidebar__header">
           <div class="sidebar__title-group">
             <h1 class="sidebar__title">メモ</h1>
           </div>
           <div class="sidebar__header-actions">
             <span id="noteCount" class="badge" aria-live="polite">0</span>
+            <div id="themeSelector"></div>
             <button id="openDocs" class="docs-button" type="button" aria-label="仕様書を開く">仕様書</button>
             <button
               id="sortToggle"
