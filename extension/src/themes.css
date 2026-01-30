@@ -77,7 +77,7 @@
   --bg-code: #002b36;
   --bg-preview: #fdf6e3;
   --text-primary: #657b83;
-  --text-secondary: #839496;
+  --text-secondary: #586e75;
   --text-muted: rgba(131, 148, 150, 0.9);
   --text-inverse: #fdf6e3;
   --border-color: rgba(101, 123, 131, 0.2);
@@ -137,7 +137,7 @@
   --bg-code: #1e1f29;
   --bg-preview: rgba(40, 42, 54, 0.95);
   --text-primary: #f8f8f2;
-  --text-secondary: #6272a4;
+  --text-secondary: #a9b1d6;
   --text-muted: rgba(98, 114, 164, 0.9);
   --text-inverse: #282a36;
   --border-color: rgba(98, 114, 164, 0.3);
