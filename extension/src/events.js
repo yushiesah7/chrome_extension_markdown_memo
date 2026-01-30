@@ -251,11 +251,7 @@ function handleSortToggle() {
 
 async function handlePreviewOpen() {
   // タブ側は拡張の保存領域から直接ロードするため、最新状態を先に保存してから開く
-  try {
-    await persistNow();
-  } catch (error) {
-    console.error("タブを開く前の保存に失敗しました", error);
-  }
+  await persistNow();
   const url = chrome.runtime.getURL("src/preview.html");
   openInNewTab(url, "プレビューを開けませんでした");
 }

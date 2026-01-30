@@ -68,13 +68,13 @@ export async function persistNow() {
     await persistState();
     setStatus("saved", "保存しました");
     statusResetTimeout = setTimeout(() => {
-      setStatus("idle");
+      setStatus("idle", "編集中");
     }, 1500);
   } catch (error) {
     console.error("即時保存に失敗:", error);
     setStatus("error", "保存に失敗しました");
     statusResetTimeout = setTimeout(() => {
-      setStatus("idle");
+      setStatus("idle", "編集中");
     }, 3000);
   }
 }
