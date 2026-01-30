@@ -17,6 +17,7 @@ import {
 } from "./state.js";
 import { elements } from "./dom.js";
 import { renderNoteList, updateEditor, setStatus, updateActiveNoteMeta } from "./render.js";
+import { renderPreviewPanel } from "./preview_panel.js";
 
 const AUTO_SAVE_DELAY = 400;
 let autoSaveTimeout = null;
@@ -85,6 +86,10 @@ export function renderApp() {
     activeNoteId: getActiveNoteId(),
   });
   updateEditor(getActiveNote(), notes.length);
+  const { previewPanelEl } = elements;
+  if (previewPanelEl && !previewPanelEl.hidden) {
+    renderPreviewPanel();
+  }
 }
 
 function handleCreateNote() {

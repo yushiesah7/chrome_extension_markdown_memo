@@ -3,7 +3,7 @@ import { initializeTheme } from "./theme.js";
 import { initializeState, getActiveNote } from "./state.js";
 import { attachEventListeners, renderApp } from "./events.js";
 import { setStatus } from "./render.js";
-import { renderPreview } from "./preview_renderer.js";
+import { renderPreviewPanel } from "./preview_panel.js";
 
 // プレビュータブであることを明示
 document.body.dataset.previewTab = "true";
@@ -217,17 +217,6 @@ function bindLivePreview() {
       renderPreviewPanel();
     }
   });
-}
-
-export function renderPreviewPanel() {
-  // 現在のメモ本文をMarkdownとして描画し、Mermaidブロックがあれば図にする
-  // プレビュー切替の瞬間に state へ反映前の入力があるため、textarea の値を優先する
-  const editorText = elements.noteBodyEl?.value;
-  const note = getActiveNote();
-  const text = (typeof editorText === "string" ? editorText : note?.body) || "";
-  const { previewContainerEl } = elements;
-  if (!previewContainerEl) return;
-  renderPreview({ text, target: previewContainerEl });
 }
 
 init();
