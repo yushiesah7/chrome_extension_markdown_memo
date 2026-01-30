@@ -337,8 +337,8 @@ body {
 }
 
 .button--ghost:hover {
-  background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.5);
+  background: var(--btn-ghost-hover-bg);
+  border-color: var(--border-color-input);
 }
 
 .button--ghost:active {
@@ -465,7 +465,7 @@ body {
   background: transparent;
   padding: 6px;
   border-radius: 6px;
-  color: #64748b;
+  color: var(--icon-color);
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
@@ -475,8 +475,8 @@ body {
 }
 
 .icon-button:hover {
-  background: rgba(100, 116, 139, 0.12);
-  color: #ef4444;
+  background: var(--icon-hover-bg);
+  color: var(--icon-hover-color);
 }
 
 .icon-button:active {
@@ -492,11 +492,11 @@ body {
   height: 42px;
   display: grid;
   place-items: center;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.16);
+  box-shadow: var(--shadow-soft);
 }
 
 .icon-button--primary:hover {
-  background: rgba(37, 99, 235, 0.24);
+  background: var(--bg-button-hover);
 }
 
 .editor__status {
@@ -651,9 +651,9 @@ body {
 
 
 .copy-button {
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(226, 232, 240, 0.9);
+  border: 1px solid var(--btn-copy-border);
+  background: var(--btn-copy-bg);
+  color: var(--btn-copy-text);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
@@ -670,8 +670,8 @@ body {
 }
 
 .copy-button:hover {
-  background: rgba(148, 163, 184, 0.15);
-  border-color: rgba(148, 163, 184, 0.5);
+  background: var(--btn-ghost-hover-bg);
+  border-color: var(--border-color-input);
 }
 
 .segmented {
