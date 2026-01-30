@@ -20,19 +20,30 @@ let statusResetTimeout = null;
  * 連続した変更はデバウンスされ、最後の変更から AUTO_SAVE_DELAY ミリ秒後に保存
  */
 export function scheduleAutoSave() {
+  // 既存のタイマーをクリア
   if (autoSaveTimeout) {
     clearTimeout(autoSaveTimeout);
+  }
+  // statusResetTimeoutもクリア（新しい保存が始まるため）
+  if (statusResetTimeout) {
+    clearTimeout(statusResetTimeout);
   }
   setStatus("saving", "自動保存中…");
   autoSaveTimeout = setTimeout(async () => {
     autoSaveTimeout = null;
-    await persistState();
-    setStatus("saved", "保存しました");
-    if (statusResetTimeout) {
-      clearTimeout(statusResetTimeout);
+    try {
+      await persistState();
+      setStatus("saved", "保存しました");
+      statusResetTimeout = setTimeout(() => {
+        setStatus("idle", "編集中");
+      }, 1500);
+    } catch (error) {
+      console.error("Auto-save failed:", error);
+      setStatus("error", "保存に失敗しました");
+      // エラー後もidle復帰（3秒後）
+      statusResetTimeout = setTimeout(() => {
+        setStatus("idle", "編集中");
+      }, 3000);
     }
-    statusResetTimeout = setTimeout(() => {
-      setStatus("idle", "編集中");
-    }, 1500);
   }, AUTO_SAVE_DELAY);
 }
