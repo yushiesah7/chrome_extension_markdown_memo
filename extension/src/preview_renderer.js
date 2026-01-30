@@ -1,5 +1,57 @@
 import { renderMarkdown } from "./markdown.js";
 
+// Mermaid初期化フラグ（1回のみ初期化）
+let mermaidInitialized = false;
+
+function initMermaidIfNeeded() {
+  if (mermaidInitialized || typeof mermaid === "undefined") return;
+  // Mermaid はユーザー入力を描画するため、strict設定で安全側に倒す
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "dark",
+    securityLevel: "strict",
+    flowchart: { htmlLabels: false },
+  });
+  mermaidInitialized = true;
+}
+
+/**
+ * テーマ変更時にMermaidを再初期化する
+ * @param {string} theme - 適用するテーマ名 ('dark', 'default', 'forest', 'neutral', etc.)
+ */
+export function reinitializeMermaidWithTheme(theme = "dark") {
+  if (typeof mermaid === "undefined") return;
+
+  // 初期化されていなければ先に初期化
+  if (!mermaidInitialized) {
+    initMermaidIfNeeded();
+  }
+
+  // テーマ設定を更新
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: theme,
+    securityLevel: "strict",
+    flowchart: { htmlLabels: false },
+  });
+
+  // 既存のダイアグラムを再レンダリング
+  const mermaidElements = document.querySelectorAll(".preview-markdown .mermaid");
+  mermaidElements.forEach((el) => {
+    // data-processed を削除して再処理可能にする
+    el.removeAttribute("data-processed");
+  });
+
+  // 再レンダリング実行
+  if (mermaidElements.length > 0) {
+    try {
+      mermaid.run({ querySelector: ".preview-markdown .mermaid" });
+    } catch (e) {
+      console.error("Mermaid re-render error", e);
+    }
+  }
+}
+
 export function renderPreview({ text, target }) {
   if (!target) return;
   // プレビュー領域を初期化（毎回描画し直す）
@@ -70,13 +122,7 @@ export function renderPreview({ text, target }) {
 
   if (hasMermaid && typeof mermaid !== "undefined") {
     try {
-      // Mermaid はユーザー入力を描画するため、strict設定で安全側に倒す
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "dark",
-        securityLevel: "strict",
-        flowchart: { htmlLabels: false },
-      });
+      initMermaidIfNeeded();
       mermaid.run({ querySelector: ".preview-markdown .mermaid" });
     } catch (e) {
       console.error("Mermaid render error", e);
