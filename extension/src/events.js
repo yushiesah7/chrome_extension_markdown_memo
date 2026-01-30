@@ -28,7 +28,7 @@ import {
 import { elements } from "./dom.js";
 import { renderNoteList, updateEditor, setStatus, updateActiveNoteMeta } from "./render.js";
 import { renderPreviewPanel } from "./preview_panel.js";
-import { scheduleAutoSave } from "./auto-save.js";
+import { scheduleAutoSave, persistNow } from "./auto-save.js";
 import {
   handleListTab,
   handleListBackspace,
@@ -249,7 +249,13 @@ function handleSortToggle() {
 // ナビゲーションハンドラ
 // ─────────────────────────────────────────────────────────────────
 
-function handlePreviewOpen() {
+async function handlePreviewOpen() {
+  // タブ側は拡張の保存領域から直接ロードするため、最新状態を先に保存してから開く
+  try {
+    await persistNow();
+  } catch (error) {
+    console.error("タブを開く前の保存に失敗しました", error);
+  }
   const url = chrome.runtime.getURL("src/preview.html");
   openInNewTab(url, "プレビューを開けませんでした");
 }
