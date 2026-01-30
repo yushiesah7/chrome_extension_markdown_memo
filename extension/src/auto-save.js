@@ -47,3 +47,34 @@ export function scheduleAutoSave() {
     }
   }, AUTO_SAVE_DELAY);
 }
+
+/**
+ * 即時保存（タブを開く等の場面で使用）
+ * 遅延保存をキャンセルして即座に保存する
+ */
+export async function persistNow() {
+  // 既存のタイマーをクリア
+  if (autoSaveTimeout) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = null;
+  }
+  if (statusResetTimeout) {
+    clearTimeout(statusResetTimeout);
+    statusResetTimeout = null;
+  }
+
+  setStatus("saving", "保存中…");
+  try {
+    await persistState();
+    setStatus("saved", "保存しました");
+    statusResetTimeout = setTimeout(() => {
+      setStatus("idle", "編集中");
+    }, 1500);
+  } catch (error) {
+    console.error("即時保存に失敗:", error);
+    setStatus("error", "保存に失敗しました");
+    statusResetTimeout = setTimeout(() => {
+      setStatus("idle", "編集中");
+    }, 3000);
+  }
+}
