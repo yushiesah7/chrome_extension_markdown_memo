@@ -1,5 +1,20 @@
 import { renderMarkdown } from "./markdown.js";
 
+// Mermaid初期化フラグ（1回のみ初期化）
+let mermaidInitialized = false;
+
+function initMermaidIfNeeded() {
+  if (mermaidInitialized || typeof mermaid === "undefined") return;
+  // Mermaid はユーザー入力を描画するため、strict設定で安全側に倒す
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "dark",
+    securityLevel: "strict",
+    flowchart: { htmlLabels: false },
+  });
+  mermaidInitialized = true;
+}
+
 export function renderPreview({ text, target }) {
   if (!target) return;
   // プレビュー領域を初期化（毎回描画し直す）
@@ -70,13 +85,7 @@ export function renderPreview({ text, target }) {
 
   if (hasMermaid && typeof mermaid !== "undefined") {
     try {
-      // Mermaid はユーザー入力を描画するため、strict設定で安全側に倒す
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: "dark",
-        securityLevel: "strict",
-        flowchart: { htmlLabels: false },
-      });
+      initMermaidIfNeeded();
       mermaid.run({ querySelector: ".preview-markdown .mermaid" });
     } catch (e) {
       console.error("Mermaid render error", e);

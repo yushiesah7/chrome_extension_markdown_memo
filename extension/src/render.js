@@ -27,12 +27,15 @@ export function renderNoteList({ notes, sortOrder, sortDirection = "desc", activ
       ? sortOrder
       : notes.map((note) => note.id);
 
+  // DocumentFragmentを使用して一括追加（リフロー最適化）
+  const fragment = document.createDocumentFragment();
   for (const noteId of orderToUse) {
     const note = noteMap.get(noteId);
     if (!note) continue;
     const item = createNoteListItem(note, note.id === activeNoteId);
-    noteListEl.appendChild(item);
+    fragment.appendChild(item);
   }
+  noteListEl.appendChild(fragment);
 }
 
 export function updateEditor(note, notesCount = 0) {
