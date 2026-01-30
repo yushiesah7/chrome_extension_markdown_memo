@@ -4,8 +4,14 @@ const SORT_DIRECTION_KEY = "sortDirection";
 const ACTIVE_NOTE_KEY = "activeNoteId";
 
 function withStorage(action) {
-  return new Promise((resolve) => {
-    action(resolve);
+  return new Promise((resolve, reject) => {
+    action((result) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(result);
+      }
+    });
   });
 }
 

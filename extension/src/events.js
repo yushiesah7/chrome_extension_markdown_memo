@@ -159,7 +159,9 @@ function selectNoteId(noteId) {
   if (noteId === getActiveNoteId()) return;
   setActiveNoteId(noteId);
   // 選択変更も即座に保存しておくことで、タブを開いた際に同じメモを表示できる
-  persistState();
+  persistState().catch((error) => {
+    console.error("Failed to persist state on note selection:", error);
+  });
   renderApp();
 }
 
@@ -706,8 +708,13 @@ function scheduleAutoSave() {
   setStatus("saving", "自動保存中…");
   autoSaveTimeout = setTimeout(async () => {
     autoSaveTimeout = null;
-    await persistState();
-    setStatus("saved", "保存しました");
+    try {
+      await persistState();
+      setStatus("saved", "保存しました");
+    } catch (error) {
+      console.error("Failed to auto-save:", error);
+      setStatus("idle", "保存に失敗しました");
+    }
     if (statusResetTimeout) {
       clearTimeout(statusResetTimeout);
     }
