@@ -6,7 +6,7 @@
 // それ以外の ~70 のCSS変数は全て自動計算される。
 // =================================================================
 
-import { deriveThemeVars } from './color-engine.js';
+import { deriveThemeVars, isLightMode } from './color-engine.js';
 import {
   PRESET_BASE_COLORS,
   THEME_IDS,
@@ -71,9 +71,36 @@ export function applyTheme(theme) {
     // color-engine.js で全CSS変数を派生して適用
     const vars = deriveThemeVars(baseColors);
     applyVarsToRoot(vars);
+    // Mermaid 図のテーマも連動（ライト系 → default、ダーク系 → dark）
+    syncMermaidTheme(baseColors.bg);
   } else {
     // 基本色がない場合（custom が未保存など）→ インライン変数をクリア
     clearInlineVars();
+  }
+}
+
+/**
+ * 背景色に応じて Mermaid のテーマを切り替える。
+ * @param {string} bgHex - 背景色
+ */
+function syncMermaidTheme(bgHex) {
+  if (typeof globalThis.mermaid === 'undefined') return;
+  const mermaidTheme = isLightMode(bgHex) ? 'default' : 'dark';
+  try {
+    globalThis.mermaid.initialize({
+      startOnLoad: false,
+      theme: mermaidTheme,
+      securityLevel: 'strict',
+      flowchart: { htmlLabels: false },
+    });
+    // 既存の図を再レンダリング
+    const els = document.querySelectorAll('.mermaid[data-processed]');
+    els.forEach(el => el.removeAttribute('data-processed'));
+    if (els.length > 0) {
+      globalThis.mermaid.run({ querySelector: '.mermaid' });
+    }
+  } catch (e) {
+    console.warn('Mermaid theme sync failed:', e);
   }
 }
 

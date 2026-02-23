@@ -43,10 +43,13 @@ let mermaidInitialized = false;
 
 function initMermaidIfNeeded() {
   if (mermaidInitialized || typeof mermaid === "undefined") return;
-  // Mermaid はユーザー入力を描画するため、strict設定で安全側に倒す
+  // 現在の data-theme から Mermaid テーマを決定
+  const dataTheme = document.documentElement.getAttribute("data-theme") || "light";
+  const lightThemes = ["light", "solarized-light"];
+  const mermaidTheme = lightThemes.includes(dataTheme) ? "default" : "dark";
   mermaid.initialize({
     startOnLoad: false,
-    theme: "dark",
+    theme: mermaidTheme,
     securityLevel: "strict",
     flowchart: { htmlLabels: false },
   });

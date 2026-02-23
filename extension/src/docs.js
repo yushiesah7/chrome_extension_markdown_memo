@@ -1,4 +1,6 @@
-import { initializeTheme } from "./theme.js";
+import { initializeTheme, getCurrentTheme } from "./theme.js";
+import { PRESET_BASE_COLORS } from "./theme-presets.js";
+import { isLightMode } from "./color-engine.js";
 
 async function init() {
   // テーマを初期化（ストレージから読み込み）
@@ -40,10 +42,13 @@ async function init() {
 
   if (typeof mermaid !== "undefined") {
     try {
-      // 仕様書内の Mermaid 図を描画（安全設定）
+      // 現在のテーマに応じた Mermaid テーマを選択
+      const theme = getCurrentTheme();
+      const baseColors = PRESET_BASE_COLORS[theme];
+      const mermaidTheme = baseColors && isLightMode(baseColors.bg) ? "default" : "dark";
       mermaid.initialize({
         startOnLoad: false,
-        theme: "dark",
+        theme: mermaidTheme,
         securityLevel: "strict",
         flowchart: { htmlLabels: false },
       });

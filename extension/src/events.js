@@ -124,6 +124,10 @@ function handleCreateNote() {
 
 function handleDeleteNote(targetId = getActiveNoteId()) {
   if (!targetId) return;
+  const notes = getNotes();
+  const note = notes.find(n => n.id === targetId);
+  const title = note?.title || '無題のメモ';
+  if (!confirm(`「${title}」を削除しますか？`)) return;
   deleteNote(targetId);
   renderApp();
   scheduleAutoSave();
