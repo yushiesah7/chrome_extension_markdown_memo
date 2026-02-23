@@ -1,5 +1,43 @@
 import { renderMarkdown } from "./markdown.js";
 
+// ---------------------------------------------------------------------------
+// DOM-based sanitization（多層防御）
+// renderMarkdown() の escapeHtml で基本的な XSS は防がれるが、
+// 万が一のエスケープ漏れに備え innerHTML 代入後に危険な要素/属性を除去する。
+// ---------------------------------------------------------------------------
+const DANGEROUS_TAGS = new Set([
+  "SCRIPT", "IFRAME", "OBJECT", "EMBED", "FORM",
+  "STYLE", "LINK", "META", "BASE", "APPLET",
+  "MATH", "SVG",          // SVGコンテキストでの攻撃防止（Mermaid由来は別途安全に処理）
+  "TEMPLATE", "SLOT",
+]);
+
+function sanitizeDOM(container) {
+  // 1. 危険な要素を除去
+  const selector = Array.from(DANGEROUS_TAGS).join(",").toLowerCase();
+  for (const el of Array.from(container.querySelectorAll(selector))) {
+    el.remove();
+  }
+
+  // 2. 全要素のイベントハンドラ属性・危険 URL を除去
+  for (const el of Array.from(container.querySelectorAll("*"))) {
+    for (const attr of Array.from(el.attributes)) {
+      // on* イベントハンドラ（onclick, onerror 等）
+      if (/^on/i.test(attr.name)) {
+        el.removeAttribute(attr.name);
+        continue;
+      }
+      // javascript: / data:text/html URL
+      if (["href", "src", "action", "formaction", "xlink:href"].includes(attr.name)) {
+        const val = attr.value.replace(/\s+/g, "").toLowerCase();
+        if (val.startsWith("javascript:") || val.startsWith("data:text/html")) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    }
+  }
+}
+
 // Mermaid初期化フラグ（1回のみ初期化）
 let mermaidInitialized = false;
 
@@ -55,14 +93,17 @@ export function reinitializeMermaidWithTheme(theme = "dark") {
 export function renderPreview({ text, target }) {
   if (!target) return;
   // プレビュー領域を初期化（毎回描画し直す）
-  target.innerHTML = "";
+  target.replaceChildren();
 
   const container = document.createElement("div");
   container.className = "preview preview-markdown";
 
   // ```mermaid ... ``` は Markdown 本体と分離し、レンダリング後に図へ差し替える
   const mermaidBlocks = [];
-  const placeholderPrefix = "@@MERMAID_BLOCK_";
+  // ランダムnonce付きプレースホルダーでユーザー入力との衝突を防止
+  // NOTE: NUL(\x00)はHTMLパーサで置換される可能性があるため使わない
+  const nonce = crypto.randomUUID();
+  const placeholderPrefix = `@@MERMAID_BLOCK_${nonce}_`;
   const placeholderSuffix = "@@";
 
   const processed = (text || "").replace(
@@ -76,6 +117,8 @@ export function renderPreview({ text, target }) {
 
   // Markdown を HTML に変換して表示
   container.innerHTML = renderMarkdown(processed);
+  // 多層防御: 万が一のエスケープ漏れに備え危険な要素/属性を除去
+  sanitizeDOM(container);
 
   // Mermaidプレースホルダーを図ブロックへ差し替え
   let hasMermaid = false;

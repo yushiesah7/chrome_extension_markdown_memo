@@ -25,11 +25,16 @@ export function renderMarkdown(text) {
     str
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
 
   const formatInline = (str) => {
     const codeSpans = [];
-    const placeholderPrefix = "@@INLINE_CODE_SPAN_";
+    // ランダムnonce付きプレースホルダーでユーザー入力との衝突を防止
+    // NOTE: NUL(\x00)はHTMLパーサで置換される可能性があるため使わない
+    const nonce = crypto.randomUUID();
+    const placeholderPrefix = `@@INLINE_CODE_SPAN_${nonce}_`;
     const placeholderSuffix = "@@";
 
     // 1. コードスパンをプレースホルダーに置換して退避

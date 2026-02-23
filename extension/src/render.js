@@ -4,7 +4,7 @@ export function renderNoteList({ notes, sortOrder, sortDirection = "desc", activ
   const { noteListEl, noteCountEl } = elements;
   if (!noteListEl) return;
 
-  noteListEl.innerHTML = "";
+  noteListEl.replaceChildren();
 
   if (noteCountEl) {
     noteCountEl.textContent = String(notes.length);
