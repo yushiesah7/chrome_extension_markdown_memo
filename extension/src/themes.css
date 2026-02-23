@@ -1,206 +1,102 @@
 /* =================================================================
-   Mermaid Markdown Memo - Color Theme Definitions
+   Mermaid Markdown Memo - Theme Styles
+
+   CSS変数の実際の値は theme.js + color-engine.js が
+   全テーマ共通で自動派生して :root にインライン適用する。
+
+   ここには以下のみを配置する:
+   1. :root の Light テーマフォールバック（JS 読み込み前の初期表示用）
+   2. テーマセレクタ等のコンポーネントスタイル
    ================================================================= */
 
+/* -----------------------------------------------------------------
+   1. Light Theme Fallback (JS 読み込み前のちらつき防止)
+   ----------------------------------------------------------------- */
 :root {
-  /* Light Theme (default) */
   --bg-primary: #ffffff;
   --bg-secondary: #f7f7f7;
   --bg-tertiary: #f0f0f0;
   --bg-sidebar: #ffffff;
-  --bg-sidebar-header: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.54));
-  --bg-input: rgba(255, 255, 255, 0.85);
-  --bg-textarea: rgba(248, 250, 252, 0.9);
-  --bg-hover: rgba(37, 99, 235, 0.18);
-  --bg-button: rgba(37, 99, 235, 0.12);
-  --bg-button-hover: rgba(37, 99, 235, 0.22);
+  --bg-sidebar-header: linear-gradient(135deg, #b3b3b3, #d9d9d9);
+  --bg-input: #f2f2f2;
+  --bg-textarea: #f7f7f7;
+  --bg-hover: #dce6f8;
+  --bg-button: #e2eaf8;
+  --bg-button-hover: #c9d7f1;
   --bg-code: #0f172a;
   --bg-preview: #ffffff;
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: rgba(100, 116, 139, 0.9);
-  --text-inverse: #e2e8f0;
-  --border-color: rgba(15, 23, 42, 0.08);
-  --border-color-light: rgba(148, 163, 184, 0.18);
-  --border-color-input: rgba(148, 163, 184, 0.4);
+  --text-secondary: #6b7a8d;
+  --text-muted: #8c96a5;
+  --text-inverse: #000000;
+  --border-color: #e0e2e6;
+  --border-color-light: #eceef1;
+  --border-color-input: #c0c5cd;
   --accent-color: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.12);
-  --accent-hover: #1d4ed8;
+  --accent-soft: #e2eaf8;
+  --accent-hover: #1a4fcc;
   --danger-color: #ef4444;
   --success-color: #22c55e;
-  --shadow: 0 24px 50px rgba(15, 23, 42, 0.16);
-  --shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.08);
-  /* Button visibility */
-  --icon-color: #4a5568;
+  --shadow: 0 24px 50px rgba(0,0,0,0.12);
+  --shadow-soft: 0 10px 28px rgba(0,0,0,0.06);
+  --icon-color: #596579;
   --icon-hover-color: #ef4444;
-  --icon-hover-bg: rgba(100, 116, 139, 0.12);
-  --btn-ghost-hover-bg: rgba(148, 163, 184, 0.12);
-  --btn-copy-bg: rgba(15, 23, 42, 0.06);
-  --btn-copy-text: #334155;
-  --btn-copy-border: rgba(15, 23, 42, 0.15);
+  --icon-hover-bg: #e4e6ea;
+  --btn-ghost-hover-bg: #e4e6ea;
+  --btn-copy-bg: #f2f3f4;
+  --btn-copy-text: #3d4a5c;
+  --btn-copy-border: #dce0e5;
+  --bg-code-block: #e2e5e9;
+  --border-code-block: #ccd0d6;
+  --text-code-block: #f8fafc;
+  --bg-overlay: rgba(0, 0, 0, 0.55);
+  --bg-modal: #f2f3f4;
+  --bg-modal-border: #c0c5cd;
+  --shadow-heavy: 0 24px 70px rgba(0,0,0,0.2);
+  --bg-toolbar: #f0f1f2;
+  --border-toolbar: #c0c5cd;
+  --bg-segmented: #f7f7f7;
+  --border-segmented: #c0c5cd;
+  --text-segmented: #0f172a;
+  --bg-segmented-active: #d6e1f5;
+  --status-idle: #8c96a5;
+  --status-saving: #2563eb;
+  --status-saved: #22c55e;
+  --bg-button-subtle: #f7f8f9;
+  --bg-button-default: #e6e8eb;
+  --text-button-default: #0f172a;
+  --text-button-on-accent: #ffffff;
+  --bg-docs-header: #f0f0f0;
+  --bg-docs-content: #ffffff;
+  --bg-docs-notice: #f7f7f7;
+  --bg-docs-details: #fbfbfb;
+  --bg-docs-error: #fdf0f0;
+  --border-docs-error: #f3b3b3;
+  --text-docs-heading: #0f172a;
+  --text-docs-body: #1e2a3a;
+  --text-docs-muted: #97a0ad;
+  --text-docs-summary: #3d4a5c;
+  --border-docs: #e8eaed;
+  --border-docs-section: #eceef1;
+  --shadow-docs: 0 20px 54px rgba(0,0,0,0.1);
+  --shadow-inset: rgba(0, 0, 0, 0.04);
+  --text-info: #8c96a5;
+  --border-toolbar-btn: #ccd0d6;
+  --text-toolbar-btn: #0f172a;
+  --checkbox-accent: #2563eb;
 }
 
-[data-theme="dark"] {
-  /* Dark Theme */
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #111827;
-  --bg-tertiary: #2d2d2d;
-  --bg-sidebar: #0b1120;
-  --bg-sidebar-header: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.54));
-  --bg-input: rgba(15, 23, 42, 0.65);
-  --bg-textarea: rgba(15, 23, 42, 0.6);
-  --bg-hover: rgba(96, 165, 250, 0.18);
-  --bg-button: rgba(59, 130, 246, 0.24);
-  --bg-button-hover: rgba(59, 130, 246, 0.32);
-  --bg-code: rgba(15, 23, 42, 0.7);
-  --bg-preview: rgba(15, 23, 42, 0.78);
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --text-muted: rgba(148, 163, 184, 0.8);
-  --text-inverse: #0f172a;
-  --border-color: rgba(148, 163, 184, 0.24);
-  --border-color-light: rgba(148, 163, 184, 0.14);
-  --border-color-input: rgba(148, 163, 184, 0.35);
-  --accent-color: #4da6ff;
-  --accent-soft: rgba(59, 130, 246, 0.26);
-  --accent-hover: #80bdff;
-  --danger-color: #f87171;
-  --success-color: #4ade80;
-  --shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
-  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.22);
-  /* Button visibility */
-  --icon-color: #9ca3af;
-  --icon-hover-color: #f87171;
-  --icon-hover-bg: rgba(156, 163, 175, 0.15);
-  --btn-ghost-hover-bg: rgba(148, 163, 184, 0.12);
-  --btn-copy-bg: rgba(255, 255, 255, 0.06);
-  --btn-copy-text: #e2e8f0;
-  --btn-copy-border: rgba(148, 163, 184, 0.25);
-}
-
-[data-theme="solarized-light"] {
-  /* Solarized Light Theme */
-  --bg-primary: #fdf6e3;
-  --bg-secondary: #eee8d5;
-  --bg-tertiary: #e4ddc8;
-  --bg-sidebar: #fdf6e3;
-  --bg-sidebar-header: linear-gradient(135deg, rgba(101, 123, 131, 0.85), rgba(88, 110, 117, 0.7));
-  --bg-input: rgba(253, 246, 227, 0.9);
-  --bg-textarea: rgba(238, 232, 213, 0.8);
-  --bg-hover: rgba(38, 139, 210, 0.15);
-  --bg-button: rgba(38, 139, 210, 0.12);
-  --bg-button-hover: rgba(38, 139, 210, 0.22);
-  --bg-code: #002b36;
-  --bg-preview: #fdf6e3;
-  --text-primary: #657b83;
-  --text-secondary: #586e75;
-  --text-muted: rgba(131, 148, 150, 0.9);
-  --text-inverse: #fdf6e3;
-  --border-color: rgba(101, 123, 131, 0.2);
-  --border-color-light: rgba(101, 123, 131, 0.12);
-  --border-color-input: rgba(101, 123, 131, 0.35);
-  --accent-color: #268bd2;
-  --accent-soft: rgba(38, 139, 210, 0.15);
-  --accent-hover: #2aa198;
-  --danger-color: #dc322f;
-  --success-color: #859900;
-  --shadow: 0 24px 50px rgba(101, 123, 131, 0.15);
-  --shadow-soft: 0 10px 28px rgba(101, 123, 131, 0.1);
-  /* Button visibility */
-  --icon-color: #586e75;
-  --icon-hover-color: #dc322f;
-  --icon-hover-bg: rgba(88, 110, 117, 0.12);
-  --btn-ghost-hover-bg: rgba(101, 123, 131, 0.12);
-  --btn-copy-bg: rgba(88, 110, 117, 0.08);
-  --btn-copy-text: #586e75;
-  --btn-copy-border: rgba(88, 110, 117, 0.2);
-}
-
-[data-theme="nord"] {
-  /* Nord Theme */
-  --bg-primary: #2e3440;
-  --bg-secondary: #3b4252;
-  --bg-tertiary: #434c5e;
-  --bg-sidebar: #2e3440;
-  --bg-sidebar-header: linear-gradient(135deg, rgba(46, 52, 64, 0.95), rgba(59, 66, 82, 0.85));
-  --bg-input: rgba(59, 66, 82, 0.8);
-  --bg-textarea: rgba(67, 76, 94, 0.7);
-  --bg-hover: rgba(136, 192, 208, 0.2);
-  --bg-button: rgba(136, 192, 208, 0.15);
-  --bg-button-hover: rgba(136, 192, 208, 0.25);
-  --bg-code: #242933;
-  --bg-preview: rgba(46, 52, 64, 0.9);
-  --text-primary: #eceff4;
-  --text-secondary: #d8dee9;
-  --text-muted: rgba(216, 222, 233, 0.7);
-  --text-inverse: #2e3440;
-  --border-color: rgba(216, 222, 233, 0.15);
-  --border-color-light: rgba(216, 222, 233, 0.1);
-  --border-color-input: rgba(216, 222, 233, 0.25);
-  --accent-color: #88c0d0;
-  --accent-soft: rgba(136, 192, 208, 0.2);
-  --accent-hover: #81a1c1;
-  --danger-color: #bf616a;
-  --success-color: #a3be8c;
-  --shadow: 0 24px 50px rgba(0, 0, 0, 0.4);
-  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.3);
-  /* Button visibility */
-  --icon-color: #d8dee9;
-  --icon-hover-color: #bf616a;
-  --icon-hover-bg: rgba(136, 192, 208, 0.15);
-  --btn-ghost-hover-bg: rgba(136, 192, 208, 0.12);
-  --btn-copy-bg: rgba(216, 222, 233, 0.08);
-  --btn-copy-text: #eceff4;
-  --btn-copy-border: rgba(216, 222, 233, 0.2);
-}
-
-[data-theme="dracula"] {
-  /* Dracula Theme */
-  --bg-primary: #282a36;
-  --bg-secondary: #44475a;
-  --bg-tertiary: #6272a4;
-  --bg-sidebar: #21222c;
-  --bg-sidebar-header: linear-gradient(135deg, rgba(68, 71, 90, 0.9), rgba(40, 42, 54, 0.85));
-  --bg-input: rgba(68, 71, 90, 0.7);
-  --bg-textarea: rgba(68, 71, 90, 0.6);
-  --bg-hover: rgba(189, 147, 249, 0.2);
-  --bg-button: rgba(189, 147, 249, 0.18);
-  --bg-button-hover: rgba(189, 147, 249, 0.28);
-  --bg-code: #1e1f29;
-  --bg-preview: rgba(40, 42, 54, 0.95);
-  --text-primary: #f8f8f2;
-  --text-secondary: #a9b1d6;
-  --text-muted: rgba(98, 114, 164, 0.9);
-  --text-inverse: #282a36;
-  --border-color: rgba(98, 114, 164, 0.3);
-  --border-color-light: rgba(98, 114, 164, 0.2);
-  --border-color-input: rgba(98, 114, 164, 0.4);
-  --accent-color: #bd93f9;
-  --accent-soft: rgba(189, 147, 249, 0.2);
-  --accent-hover: #ff79c6;
-  --danger-color: #ff5555;
-  --success-color: #50fa7b;
-  --shadow: 0 24px 50px rgba(0, 0, 0, 0.5);
-  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.35);
-  /* Button visibility */
-  --icon-color: #f8f8f2;
-  --icon-hover-color: #ff5555;
-  --icon-hover-bg: rgba(189, 147, 249, 0.15);
-  --btn-ghost-hover-bg: rgba(189, 147, 249, 0.12);
-  --btn-copy-bg: rgba(248, 248, 242, 0.08);
-  --btn-copy-text: #f8f8f2;
-  --btn-copy-border: rgba(98, 114, 164, 0.3);
-}
-
-/* Theme Selector Styles */
+/* -----------------------------------------------------------------
+   2. Theme Selector Component Styles
+   ----------------------------------------------------------------- */
 .theme-selector {
   position: relative;
 }
 
 .theme-selector__button {
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-inverse, rgba(226, 232, 240, 0.92));
+  border: 1px solid var(--border-color-light);
+  background: var(--bg-button-subtle);
+  color: var(--text-inverse);
   border-radius: 999px;
   padding: 7px 10px;
   font-size: 12px;
@@ -213,8 +109,8 @@
 }
 
 .theme-selector__button:hover {
-  background: rgba(148, 163, 184, 0.14);
-  border-color: rgba(148, 163, 184, 0.5);
+  background: var(--btn-ghost-hover-bg);
+  border-color: var(--border-color-input);
 }
 
 .theme-selector__dropdown {
@@ -291,4 +187,8 @@
 
 .theme-selector__swatch--dracula {
   background: linear-gradient(135deg, #282a36 50%, #bd93f9 50%);
+}
+
+.theme-selector__swatch--custom {
+  background: conic-gradient(#ff0000, #ff8800, #ffff00, #00ff00, #0088ff, #8800ff, #ff0000);
 }

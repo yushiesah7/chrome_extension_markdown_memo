@@ -1,4 +1,9 @@
-function init() {
+import { initializeTheme } from "./theme.js";
+
+async function init() {
+  // テーマを初期化（ストレージから読み込み）
+  await initializeTheme();
+
   // 仕様書ページ（docs.html）内の閉じるボタン
   const closeBtn = document.getElementById("close");
   closeBtn?.addEventListener("click", () => {

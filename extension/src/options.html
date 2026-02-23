@@ -2,55 +2,270 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <title>Local Markdown Memo - 設定</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: "Noto Sans JP", system-ui, sans-serif;
-        background: #f8fafc;
-        color: #1f2933;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .container {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-        padding: 32px;
-        width: min(480px, 90vw);
-      }
-
-      h1 {
-        margin-top: 0;
-        font-size: 24px;
-        text-align: center;
-      }
-
-      p {
-        line-height: 1.6;
-        margin: 16px 0 0;
-        text-align: center;
-      }
-
-      .coming-soon {
-        display: inline-block;
-        margin-top: 24px;
-        padding: 8px 16px;
-        border-radius: 999px;
-        border: 1px solid #2563eb;
-        color: #2563eb;
-        background: rgba(37, 99, 235, 0.08);
-      }
-    </style>
+    <title>Mermaid Markdown Memo - 設定</title>
+    <link rel="stylesheet" href="themes.css" />
+    <link rel="stylesheet" href="options.css" />
   </head>
   <body>
-    <div class="container">
-      <h1>設定</h1>
-      <p>このページでは、今後ホットキーなどの設定項目を提供予定です。</p>
-      <p class="coming-soon">Coming soon</p>
+    <div class="options">
+      <nav class="options__nav">
+        <button type="button" class="options__back-btn" id="backBtn">← メモに戻る</button>
+      </nav>
+
+      <header class="options__header">
+        <h1 class="options__title">テーマ設定</h1>
+        <p class="options__subtitle">プリセットから選ぶか、オリジナルカラーを作成できます</p>
+      </header>
+
+      <section class="options__section">
+        <h2 class="options__section-title">テーマ選択</h2>
+        <div class="theme-grid" id="themeGrid">
+          <!-- JS で生成 -->
+        </div>
+      </section>
+
+      <section class="options__section options__custom-section" id="customSection" hidden>
+        <h2 class="options__section-title">カスタムテーマ</h2>
+
+        <div class="custom-layout">
+          <!-- 左カラム: コントロール -->
+          <div class="custom-layout__controls">
+            <div class="custom-controls">
+              <div class="custom-controls__row">
+                <label class="custom-controls__label" for="baseTheme">ベーステーマ</label>
+                <select class="custom-controls__select" id="baseTheme">
+                  <option value="light">Light</option>
+                  <option value="dark" selected>Dark</option>
+                  <option value="solarized-light">Solarized Light</option>
+                  <option value="nord">Nord</option>
+                  <option value="dracula">Dracula</option>
+                </select>
+              </div>
+
+              <div class="color-pickers" id="colorPickers">
+                <!-- 基本色（常時展開） -->
+                <div class="color-group color-group--open">
+                  <button type="button" class="color-group__header" data-group="basic">
+                    <span class="color-group__title">基本色</span>
+                    <span class="color-group__chevron">▾</span>
+                  </button>
+                  <div class="color-group__body">
+                    <div class="color-picker">
+                      <label class="color-picker__label" for="colorBg">背景</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorBg" class="color-picker__input" />
+                        <input type="text" id="colorBgHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                      </div>
+                    </div>
+                    <div class="color-picker">
+                      <label class="color-picker__label" for="colorText">テキスト</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorText" class="color-picker__input" />
+                        <input type="text" id="colorTextHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                      </div>
+                    </div>
+                    <div class="color-picker">
+                      <label class="color-picker__label" for="colorAccent">アクセント</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorAccent" class="color-picker__input" />
+                        <input type="text" id="colorAccentHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                      </div>
+                    </div>
+                    <div class="color-picker">
+                      <label class="color-picker__label" for="colorSidebar">サイドバー</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorSidebar" class="color-picker__input" />
+                        <input type="text" id="colorSidebarHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                      </div>
+                    </div>
+                    <div class="color-picker">
+                      <label class="color-picker__label" for="colorCode">コード背景</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorCode" class="color-picker__input" />
+                        <input type="text" id="colorCodeHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- UI要素（折りたたみ） -->
+                <div class="color-group">
+                  <button type="button" class="color-group__header" data-group="ui">
+                    <span class="color-group__title">UI要素</span>
+                    <span class="color-group__chevron">▸</span>
+                  </button>
+                  <div class="color-group__body">
+                    <div class="color-picker color-picker--auto" data-color-key="border">
+                      <label class="color-picker__label" for="colorBorder">ボーダー</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorBorder" class="color-picker__input" />
+                        <input type="text" id="colorBorderHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="border">自動</button>
+                      </div>
+                    </div>
+                    <div class="color-picker color-picker--auto" data-color-key="hover">
+                      <label class="color-picker__label" for="colorHover">ホバー</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorHover" class="color-picker__input" />
+                        <input type="text" id="colorHoverHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="hover">自動</button>
+                      </div>
+                    </div>
+                    <div class="color-picker color-picker--auto" data-color-key="button">
+                      <label class="color-picker__label" for="colorButton">ボタン</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorButton" class="color-picker__input" />
+                        <input type="text" id="colorButtonHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="button">自動</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 状態色（折りたたみ） -->
+                <div class="color-group">
+                  <button type="button" class="color-group__header" data-group="state">
+                    <span class="color-group__title">状態色</span>
+                    <span class="color-group__chevron">▸</span>
+                  </button>
+                  <div class="color-group__body">
+                    <div class="color-picker color-picker--auto" data-color-key="danger">
+                      <label class="color-picker__label" for="colorDanger">エラー/削除</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorDanger" class="color-picker__input" />
+                        <input type="text" id="colorDangerHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="danger">自動</button>
+                      </div>
+                    </div>
+                    <div class="color-picker color-picker--auto" data-color-key="success">
+                      <label class="color-picker__label" for="colorSuccess">保存成功</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorSuccess" class="color-picker__input" />
+                        <input type="text" id="colorSuccessHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="success">自動</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- テキスト詳細（折りたたみ） -->
+                <div class="color-group">
+                  <button type="button" class="color-group__header" data-group="textDetail">
+                    <span class="color-group__title">テキスト詳細</span>
+                    <span class="color-group__chevron">▸</span>
+                  </button>
+                  <div class="color-group__body">
+                    <div class="color-picker color-picker--auto" data-color-key="secondaryText">
+                      <label class="color-picker__label" for="colorSecondaryText">サブテキスト</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorSecondaryText" class="color-picker__input" />
+                        <input type="text" id="colorSecondaryTextHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="secondaryText">自動</button>
+                      </div>
+                    </div>
+                    <div class="color-picker color-picker--auto" data-color-key="mutedText">
+                      <label class="color-picker__label" for="colorMutedText">ミュートテキスト</label>
+                      <div class="color-picker__input-group">
+                        <input type="color" id="colorMutedText" class="color-picker__input" />
+                        <input type="text" id="colorMutedTextHex" class="color-picker__hex" maxlength="7" spellcheck="false" />
+                        <button type="button" class="color-picker__auto-btn color-picker__auto-btn--active" data-auto-for="mutedText">自動</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="custom-actions">
+              <button type="button" class="custom-actions__btn custom-actions__btn--save" id="saveCustom">保存</button>
+              <button type="button" class="custom-actions__btn custom-actions__btn--reset" id="resetCustom">リセット</button>
+            </div>
+
+            <div class="custom-status" id="customStatus" hidden></div>
+          </div>
+
+          <!-- 右カラム: プレビュー (sticky) -->
+          <div class="custom-layout__preview">
+            <div class="preview-panel" id="previewPanel">
+              <h3 class="preview-panel__title">プレビュー</h3>
+
+              <!-- タブ切替 -->
+              <div class="preview-tabs">
+                <button type="button" class="preview-tabs__btn preview-tabs__btn--active" data-preview-tab="popup">ポップアップ</button>
+                <button type="button" class="preview-tabs__btn" data-preview-tab="tab">タブビュー</button>
+              </div>
+
+              <!-- ポップアップビュー（既存） -->
+              <div class="preview-mini" id="previewMini" data-preview-view="popup">
+                <div class="preview-mini__sidebar">
+                  <div class="preview-mini__sidebar-header">Memo</div>
+                  <div class="preview-mini__sidebar-item preview-mini__sidebar-item--active">メモ 1</div>
+                  <div class="preview-mini__sidebar-item">メモ 2</div>
+                  <div class="preview-mini__sidebar-item">メモ 3</div>
+                </div>
+                <div class="preview-mini__editor">
+                  <div class="preview-mini__toolbar">
+                    <span class="preview-mini__toolbar-btn preview-mini__toolbar-btn--active">編集</span>
+                    <span class="preview-mini__toolbar-btn">プレビュー</span>
+                  </div>
+                  <div class="preview-mini__content">
+                    <div class="preview-mini__title-bar">サンプルメモ</div>
+                    <div class="preview-mini__text-area">
+                      <span class="preview-mini__text-line">## 見出し</span>
+                      <span class="preview-mini__text-line preview-mini__text-line--muted">テキストの内容…</span>
+                    </div>
+                    <div class="preview-mini__code-block">
+                      <span class="preview-mini__code-text">const x = 42;</span>
+                    </div>
+                    <div class="preview-mini__accent-bar"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- タブビュー（新規） -->
+              <div class="preview-mini preview-mini--tab" id="previewTab" data-preview-view="tab" style="display:none">
+                <!-- Markdownツールバー -->
+                <div class="preview-mini__md-toolbar">
+                  <span class="preview-mini__md-btn">B</span>
+                  <span class="preview-mini__md-btn">I</span>
+                  <span class="preview-mini__md-btn">H</span>
+                  <span class="preview-mini__md-btn">🔗</span>
+                  <span class="preview-mini__md-btn">📷</span>
+                  <span class="preview-mini__md-btn">—</span>
+                </div>
+                <!-- 左右分割: エディタ | レンダリング結果 -->
+                <div class="preview-mini__split">
+                  <div class="preview-mini__split-editor">
+                    <div class="preview-mini__text-area">
+                      <span class="preview-mini__text-line">## 見出し</span>
+                      <span class="preview-mini__text-line preview-mini__text-line--muted">テキストの内容…</span>
+                      <span class="preview-mini__text-line preview-mini__text-line--accent">[リンク](url)</span>
+                    </div>
+                    <div class="preview-mini__code-block">
+                      <span class="preview-mini__code-text">const x = 42;</span>
+                    </div>
+                  </div>
+                  <div class="preview-mini__split-divider"></div>
+                  <div class="preview-mini__split-preview">
+                    <div class="preview-mini__rendered-heading">見出し</div>
+                    <div class="preview-mini__rendered-text">テキストの内容…</div>
+                    <div class="preview-mini__rendered-link">リンク</div>
+                    <div class="preview-mini__rendered-code">const x = 42;</div>
+                  </div>
+                </div>
+                <!-- ステータスバー -->
+                <div class="preview-mini__statusbar">
+                  <span class="preview-mini__status-dot preview-mini__status-dot--saved"></span>
+                  <span class="preview-mini__status-text">保存済み</span>
+                  <span class="preview-mini__status-info">42文字</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
+
+    <script type="module" src="options.js"></script>
   </body>
 </html>
